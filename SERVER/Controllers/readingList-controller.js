@@ -57,50 +57,38 @@ exports.getAllReadingLists = async (req, res) => {
 
 
 // GET /api/reading-lists/:id - Get a specific reading list
+// CORRECTED: exports.getSingleReadingList
 exports.getSingleReadingList = async (req, res) => {
   try {
     const userId = req.user._id;
     const { id } = req.params;
 
-    // 1. Input Validation
     if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(id)) {
-      return res.status(400).json({
-        success: false,
-        error: "Invalid user ID or reading list ID format."
-      });
+      return res.status(400).json({ success: false, error: "Invalid user ID or reading list ID format." });
     }
 
-    // 2. Pagination Parameters
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 15;
     const skip = (page - 1) * limit;
 
-    // 3. Find the Reading List with a Security Check
-    // We use a single query to find the list that belongs to the user.
-    // The .populate() call is chained to fetch only the books for the current page.
-    const readingList = await ReadingList.findOne({ _id: id, userId })
-      .populate({
-        path: 'books',
-        options: {
-          skip: skip,
-          limit: limit
-        }
-      });
+    // Step 1: Find the list and check ownership to get the total book count FIRST.
+    // We only select the 'books' field for efficiency.
+    const listForCount = await ReadingList.findOne({ _id: id, userId }).select('books');
 
-    // 4. Handle Not Found Case
-    if (!readingList) {
-      return res.status(404).json({
-        success: false,
-        message: 'Reading list not found or does not belong to the user.'
-      });
+    if (!listForCount) {
+      return res.status(404).json({ success: false, message: 'Reading list not found or does not belong to the user.' });
     }
-    
-    // We get the total number of books directly from the unpopulated `books` array.
-    // Mongoose still tracks the original, unpopulated array, allowing us to get the full count.
-    const totalBooks = readingList.books.length;
+
+    const totalBooks = listForCount.books.length;
     const totalPages = Math.ceil(totalBooks / limit);
 
-    // 5. Send Response
+    // Step 2: Now, find the same list again but populate it with pagination for the response.
+    const readingList = await ReadingList.findById(id) // We already verified ownership, so a simple findById is fine.
+      .populate({
+        path: 'books',
+        options: { skip, limit }
+      });
+
     res.status(200).json({
       success: true,
       data: readingList,
@@ -114,10 +102,10 @@ exports.getSingleReadingList = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching reading list.',
-      error: error.message
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching reading list.', 
+      error: error.message 
     });
   }
 };

@@ -3,8 +3,6 @@ const express = require("express");
 const cors = require("cors");
 const { connectToDB } = require("./Utils/database");
 const bodyParser = require("body-parser");
-
-// Import route files
 const authRouter = require("./Routes/auth-routes");
 const bookRouter = require("./Routes/book-routes");
 const readingListRouter = require("./Routes/readingList-routes");
@@ -17,7 +15,7 @@ if (!process.env.DB_URI || !process.env.JWT_SECRET_KEY) {
 }
 
 const app = express();
-
+// Middleware 
 app.use(cors());
 app.use(bodyParser.json());
 

@@ -9,7 +9,7 @@ const mongoose = require('mongoose');
  */
 const bookSchema = new mongoose.Schema({
   // Link to the user who owns this book entry
-  user: {
+  userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
@@ -43,7 +43,8 @@ const bookSchema = new mongoose.Schema({
   },
   imageUrl: {
     type: String,
-    trim: true
+    trim: true,
+    default : 'https://dhmckee.com/wp-content/uploads/2018/11/defbookcover-min.jpg'
   },
   status: {
     type: String,
@@ -58,14 +59,14 @@ const bookSchema = new mongoose.Schema({
   // --- Optional Advanced Feature Fields ---
 
   // For personal ratings and reviews
-  rating: {
+  review: {
   type: String,
-  enum: ['Transformative','Worthwhile','Uninspiring', 'Not Rated'],
+  enum: ['Transformative','Worthwhile','Uninspiring','Not Rated'],
   default: 'Not Rated'
 },
-  review: {
-    summary: { type: String, trim: true }, // Replaces old "learnings"
-    details: { type: String, trim: true }
+  learnings: {
+    summary: { type: String, trim: true, default : '' }, // Replaces old "learnings"
+    details: { type: String, trim: true, default : '' }
   },
 
  /*  // For tracking reading streaks
