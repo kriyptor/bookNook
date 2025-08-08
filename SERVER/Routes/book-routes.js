@@ -10,8 +10,8 @@ const {
   toggleFavorite
 } = require('../Controllers/book-controller');
 
-// GET /api/books/:userId - Get all books for a user (with optional filters)
-router.get('/:userId', getBooks);
+// GET /api/books - Get all books for a user (with optional filters)
+router.get('/', getBooks);
 
 // GET /api/books/book/:id - Get a specific book
 router.get('/book/:id', getBook);

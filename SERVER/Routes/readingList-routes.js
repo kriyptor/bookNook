@@ -9,8 +9,8 @@ const {
   updateReadingListBooks
 } = require('../Controllers/readingList-controller');
 
-// GET /api/reading-lists/:userId - Get all reading lists for a user
-router.get('/:userId', getReadingLists);
+// GET /api/reading-lists - Get all reading lists for a user
+router.get('/', getReadingLists);
 
 // GET /api/reading-lists/list/:id - Get a specific reading list
 router.get('/list/:id', getReadingList);

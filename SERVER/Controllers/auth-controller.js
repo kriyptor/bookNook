@@ -3,10 +3,6 @@ const bcrypt = require(`bcrypt`);
 const jwt = require(`jsonwebtoken`);
 
 
-function isStringInvalid(string) {
-    return string === undefined || string.length === 0;
-}
-
 const generateAccessToken = (id, name) => {
     return jwt.sign({ userId: id, name }, process.env.JWT_SECRET_KEY);
 }
@@ -16,22 +12,13 @@ exports.createUser = async (req, res) => {
         const { name, email, password } = req.body;
         
         // Validate inputs
-        if (isStringInvalid(name) || isStringInvalid(email) || isStringInvalid(password)) {
+        if (!name || !email || !password) {
             return res.status(400).json({
                 success: false,
                 message: 'All fields are required'
             });
         }
         
-        const isUserExist = await User.findOne({ email });
-
-        if (isUserExist) {
-            return res.status(400).json({
-                success: false,
-                message: `User already exists!`
-            });
-        }
-
         const salt = 10;
         const hashedPassword = await bcrypt.hash(password, salt);
         
@@ -49,7 +36,12 @@ exports.createUser = async (req, res) => {
         });
 
     } catch (error) {
-        console.log(error);
+        if (error.code === 11000) {
+            return res.status(400).json({
+                success: false,
+                message: `User with this email already exists.`
+            });
+        }
         return res.status(500).json({ 
             success: false,
             message: 'Internal server error',
@@ -63,7 +55,7 @@ exports.loginUser = async (req, res) => {
         const { email, password } = req.body;
         
         // Validate inputs
-        if (isStringInvalid(email) || isStringInvalid(password)) {
+        if (!email || !password) {
             return res.status(400).json({
                 success: false,
                 message: 'Email and password are required'
@@ -72,12 +64,10 @@ exports.loginUser = async (req, res) => {
 
         const user = await User.findOne({ email }).select('+password');
 
-        console.log(`This is from login-cont:`, user);
-
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: `User does not exist!`
+                message: `Invalid credentials!`
             });
         }
         
@@ -99,7 +89,6 @@ exports.loginUser = async (req, res) => {
         });
 
     } catch (error) {
-        console.log(error);
         return res.status(500).json({ 
             success: false,
             message: 'Internal server error',
@@ -107,4 +96,3 @@ exports.loginUser = async (req, res) => {
         });
     }
 }
-
