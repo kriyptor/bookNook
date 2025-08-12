@@ -37,9 +37,29 @@ const bookSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
-  category: { // Can be used as a primary category
+  category: {
     type: String,
-    trim: true
+    trim: true,
+    required: true, // It's good practice to require a category
+    enum: [
+      'Fiction',
+      'Non-Fiction',
+      'Spirituality',
+      'Philosophy',
+      'Biography & Memoir',
+      'Literature & Poetry',
+      'Sci-Fi & Fantasy',
+      'Mystery & Thriller',
+      'Self-Help & Personal Development',
+      'Business & Finance',
+      'History',
+      'Arts & Photography',
+      'Health & Wellness',
+      'Science & Technology',
+      'Graphic Novels & Comics',
+      'Other' // A default or catch-all category
+    ],
+    default: 'Other' // Set a sensible default
   },
   imageUrl: {
     type: String,
@@ -83,4 +103,4 @@ const bookSchema = new mongoose.Schema({
 
 const Books = mongoose.model('Books', bookSchema);
 
-module.exports = Books;
+module.exports = { Books };

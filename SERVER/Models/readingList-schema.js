@@ -27,7 +27,7 @@ const readingListSchema = new mongoose.Schema({
   // An ordered array that will store the IDs of books in this list
   books: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Book'
+    ref: 'Books'
   }],
 
   // --- Optional Sharing and Collaboration Fields ---
@@ -64,4 +64,4 @@ readingListSchema.index({ userId: 1, title: 1 }, { unique: true });
 
 const ReadingList = mongoose.model('ReadingList', readingListSchema);
 
-module.exports = ReadingList;
+module.exports = { ReadingList };

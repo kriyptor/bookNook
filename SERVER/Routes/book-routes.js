@@ -1,34 +1,30 @@
 const express = require('express');
 const router = express.Router();
-const {
-  getBooks,
-  getBook,
-  createBook,
-  updateBook,
-  deleteBook,
-  updateBookStatus,
-  toggleFavorite
-} = require('../Controllers/book-controller');
+const { authenticate } = require('../Middleware/auth-middleware');
+const bookController = require('../Controllers/book-controller');
 
 // GET /api/books - Get all books for a user (with optional filters)
-router.get('/', getBooks);
+router.get('/', authenticate, bookController.getAllBooks);
 
 // GET /api/books/book/:id - Get a specific book
-router.get('/book/:id', getBook);
+router.get('/book/:id', authenticate, bookController.getSingleBookData);
 
 // POST /api/books - Create a new book
-router.post('/', createBook);
+router.post('/', authenticate, bookController.createBook);
 
 // PUT /api/books/:id - Update a book
-router.put('/:id', updateBook);
+router.put('/:id', authenticate, bookController.updateBookData);
 
 // DELETE /api/books/:id - Delete a book
-router.delete('/:id', deleteBook);
+router.delete('/:id', authenticate, bookController.deleteBook);
 
 // PUT /api/books/:id/status - Update book reading status
-router.put('/:id/status', updateBookStatus);
+router.put('/:id/status', authenticate, bookController.updateBookStatusToReadAndLearnings);
+
+// PUT /api/books/:id/reading - Toggle reading status
+router.put('/:id/reading', authenticate, bookController.toggleBookStatusToReading);
 
 // PUT /api/books/:id/favorite - Toggle favorite status
-router.put('/:id/favorite', toggleFavorite);
+router.put('/:id/favorite', authenticate, bookController.toggleFavorite);
 
 module.exports = router;

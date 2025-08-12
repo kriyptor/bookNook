@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
-const Books = require('../Models/book-schema');
-const ReadingList = require('../Models/readingList-schema');
+const {Books} = require('../Models/book-schema');
+const {ReadingList} = require('../Models/readingList-schema');
 
 // GET /api/reading-lists - Get all reading lists for a user
 exports.getAllReadingLists = async (req, res) => {
@@ -112,13 +112,14 @@ exports.getSingleReadingList = async (req, res) => {
 
 // POST /api/reading-lists - Create a new reading list
 exports.createReadingList = async (req, res) => {
+  // Start a new transaction session
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
     const userId = req.user._id;
 
-    // 1. Validate userId and required fields in a single block
+    // 1. Validate userId and required fields
     if (!mongoose.isValidObjectId(userId)) {
       await session.abortTransaction();
       session.endSession();
@@ -133,7 +134,7 @@ exports.createReadingList = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Title and description are required' });
     }
 
-    // 2. Check for an existing list
+    // 2. Check for an existing list for the user
     const existingList = await ReadingList.findOne({ userId, title }).session(session);
     if (existingList) {
       await session.abortTransaction();
@@ -145,15 +146,18 @@ exports.createReadingList = async (req, res) => {
     }
 
     // 3. Create books within the transaction if the array is not empty
-    let createdBookIds = [];
+    let createdBooks = [];
     if (books.length > 0) {
+      // Create new book documents with the user ID
       const newBooks = books.map(book => ({
         ...book,
-        user: userId
+        userId: userId // CRITICAL: Use 'userId' to match the schema
       }));
-      const createdBooks = await Book.insertMany(newBooks, { session });
-      createdBookIds = createdBooks.map(book => book._id);
+      createdBooks = await Books.insertMany(newBooks, { session });
     }
+    
+    // Get the IDs of the newly created books
+    const createdBookIds = createdBooks.map(book => book._id);
     
     // 4. Create the new reading list with the book IDs
     const newReadingList = new ReadingList({
@@ -268,7 +272,7 @@ exports.updateReadingListBooks = async (req, res) => {
   try {
     const userId = req.user._id;
     const { id } = req.params;
-    const { books } = req.body;
+    const books = req.body;
 
     // 1. Validate IDs
     if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(id)) {
@@ -280,16 +284,17 @@ exports.updateReadingListBooks = async (req, res) => {
       return res.status(400).json({ success: false, message: "Books array is required and cannot be empty" });
     }
 
-    const invalidBookId = books.find(bookId => !mongoose.isValidObjectId(bookId));
+    //TODO:
+    /* const invalidBookId = books.find(bookId => !mongoose.isValidObjectId(bookId));
     if (invalidBookId) {
       return res.status(400).json({ success: false, error: "Invalid book ID format found in the array" });
     }
-
+ */
     // 3. Optional: Validate that all books belong to the user for data integrity
-    const existingBooks = await Book.find({ _id: { $in: books }, user: userId });
+   /*  const existingBooks = await Books.find({ _id: { $in: books }, userId });
     if (existingBooks.length !== books.length) {
       return res.status(400).json({ success: false, message: "One or more books do not exist or do not belong to the user" });
-    }
+    } */
 
     // 4. Find and atomically update the reading list in a single query
     const updatedReadingList = await ReadingList.findOneAndUpdate(

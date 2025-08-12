@@ -1,7 +1,9 @@
-const Books = require('../Models/book-schema');
+const mongoose = require('mongoose');
+const {Books} = require('../Models/book-schema');
+const {ReadingList} = require('../Models/readingList-schema'); 
 
 
-const getSingleBookData = async (req, res) => {
+exports.getSingleBookData = async (req, res) => {
   try {
     const userId = req.user._id;
     const { id } = req.params; 
@@ -35,35 +37,50 @@ const getSingleBookData = async (req, res) => {
 };
 
 
-// GET /api/books - Get all books for a user
+// GET /api/books - Get all books for a user with optional filtering
 exports.getAllBooks = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const { status, category, isFavorite, rating } = req.params;
+    // ISSUE 1 FIXED: All filters are now correctly taken from req.query
+    const { status, category, isFavorite, review, search } = req.query;
 
     const page = parseInt(req.query.page) || 1;
-    const limitPointer = parseInt(req.query.limit) || 15;
-    const skipPointer = (page - 1) * limitPointer;
+    const limit = parseInt(req.query.limit) || 15;
+    const skip = (page - 1) * limit;
     
+    // The base filter ensures users can only see their own books
     let filter = { userId };
     
-    // Add optional filters
+    // --- Build the Filter Object Dynamically ---
     if (status) filter.status = status;
-    if (category) filter.category = category;
+    //if (category) filter.category = category;
     if (isFavorite !== undefined) filter.isFavorite = isFavorite === 'true';
-    if (rating) filter.rating = rating;
 
-    const books = await Books.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skipPointer)
-      .limit(limitPointer);
-
-
-     // Count total books for pagination
-        const totalBooks = await Books.countDocuments(filter);
+    // ISSUE 2 FIXED: Filtering by the 'review' field (the enum)
+    if (review) filter.review = review;
     
-        const totalPages = Math.ceil(totalBooks / limitPointer);  
+    // BONUS: A robust text search for title, author, and review text
+    if (search) {
+        filter.$or = [
+            { 'title': { $regex: search, $options: 'i' } },
+            { 'author': { $regex: search, $options: 'i' } },
+            /* { 'review.summary': { $regex: search, $options: 'i' } },
+            { 'review.details': { $regex: search, $options: 'i' } } */
+        ];
+    }
+
+    // --- Execute Queries ---
+    // Using Promise.all to run count and find queries concurrently for better performance
+    const [books, totalBooks] = await Promise.all([
+        Books.find(filter)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit),
+        Books.countDocuments(filter)
+    ]);
+    
+    const totalPages = Math.ceil(totalBooks / limit);  
     
     res.status(200).json({
       success: true,
@@ -88,7 +105,7 @@ exports.getAllBooks = async (req, res) => {
 
 
 // POST /api/books - Create a new book
-const createBook = async (req, res) => {
+exports.createBook = async (req, res) => {
   try {
     const userId = req.user._id;
 
@@ -102,8 +119,7 @@ const createBook = async (req, res) => {
       imageUrl,
       status,
       isFavorite,
-      review, // Destructure the review object
-      // Note: 'learnings' from your old schema is now 'review' in the new schema
+      learnings, // Destructure the learnings object
     } = req.body;
 
     // Validate required fields
@@ -114,9 +130,36 @@ const createBook = async (req, res) => {
       });
     }
 
+     if (
+       !category ||
+       ![
+         "Fiction",
+         "Non-Fiction",
+         "Spirituality",
+         "Philosophy",
+         "Biography & Memoir",
+         "Literature & Poetry",
+         "Sci-Fi & Fantasy",
+         "Mystery & Thriller",
+         "Self-Help & Personal Development",
+         "Business & Finance",
+         "History",
+         "Arts & Photography",
+         "Health & Wellness",
+         "Science & Technology",
+         "Graphic Novels & Comics",
+         "Other",
+       ].includes(category)
+     ) {
+       return res.status(400).json({
+         success: false,
+         error: "Invalid category",
+       });
+     }
+
     // Build the book data object dynamically, including the userId
     const bookData = {
-      user: userId, // CRITICAL: Link the book to the authenticated user
+      userId, 
       title,
       author,
       category
@@ -129,11 +172,11 @@ const createBook = async (req, res) => {
     if (status) bookData.status = status;
     if (isFavorite !== undefined) bookData.isFavorite = isFavorite; // Handle boolean explicitly
     
-    // Handle the review data according to your schema
-    if (review) {
-      bookData.review = {
-        summary: review.summary,
-        details: review.details,
+    // Handle the learnings data according to your schema
+    if (learnings) {
+      bookData.learnings = {
+        summary: learnings.summary,
+        details: learnings.details,
       };
     }
     
@@ -157,18 +200,18 @@ const createBook = async (req, res) => {
 };
 
 // PUT /api/books/:id - Update a book
-const updateBookData = async (req, res) => {
+exports.updateBookData = async (req, res) => {
   try {
 
     const userId = req.user._id;
-    const { _id } = req.params;
+    const { id } = req.params;
     const updateData = req.body;
 
-      if (!mongoose.isValidObjectId(_id)) {
+      if (!mongoose.isValidObjectId(id)) {
           return res.status(400).json({ success: false, error: "Invalid book ID format" });
       }
 
-    const existingBook = await Books.findOne({ _id, userId });
+    const existingBook = await Books.findOne({ _id : id, userId });
     
     if (!existingBook) {
       return res.status(404).json({
@@ -177,7 +220,6 @@ const updateBookData = async (req, res) => {
       });
     }
 
-   
     const updatedBook = await Books.findByIdAndUpdate(
       id,
       updateData,
@@ -303,7 +345,7 @@ exports.toggleBookStatusToReading = async (req, res) => {
 };
 
 // PUT /api/books/:id/favorite - Toggle favorite status
-const toggleFavorite = async (req, res) => {
+exports.toggleFavorite = async (req, res) => {
   try {
     const userId = req.user._id;
     const { id } = req.params; // Using 'id' for consistency with route params
@@ -350,7 +392,7 @@ If any part of the deletion fails, the entire operation is rolled back.
 */
 
 // DELETE /api/books/:id - Delete a book
-const deleteBook = async (req, res) => {
+exports.deleteBook = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
