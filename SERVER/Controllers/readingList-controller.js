@@ -266,60 +266,106 @@ exports.updateReadingList = async (req, res) => {
 };
 
 
+exports.addBookToReadingList = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-// PUT /api/reading-lists/:id/books - Add/Remove books from reading list
-exports.updateReadingListBooks = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { id } = req.params;
-    const books = req.body;
+    const { id: readingListId } = req.params;
+    const bookData = req.body;
 
     // 1. Validate IDs
-    if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(id)) {
-      return res.status(400).json({ success: false, error: "Invalid user or list ID format" });
+    if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(readingListId)) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ success: false, error: "Invalid user or reading list ID format" });
     }
 
-    // 2. Validate books array and its contents
-    if (!Array.isArray(books) || books.length === 0) {
-      return res.status(400).json({ success: false, message: "Books array is required and cannot be empty" });
+    // 2. Find the reading list and check for ownership
+    const readingList = await ReadingList.findOne({ _id: readingListId, userId }).session(session);
+    if (!readingList) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ success: false, message: 'Reading list not found or does not belong to the user.' });
     }
 
-    //TODO:
-    /* const invalidBookId = books.find(bookId => !mongoose.isValidObjectId(bookId));
-    if (invalidBookId) {
-      return res.status(400).json({ success: false, error: "Invalid book ID format found in the array" });
+    // 3. Create the new book and validate required fields
+    if (!bookData.title || !bookData.author || !bookData.category) {
+       await session.abortTransaction();
+       session.endSession();
+       return res.status(400).json({ success: false, error: "Title, author, and category are required for a new book." });
     }
- */
-    // 3. Optional: Validate that all books belong to the user for data integrity
-   /*  const existingBooks = await Books.find({ _id: { $in: books }, userId });
-    if (existingBooks.length !== books.length) {
-      return res.status(400).json({ success: false, message: "One or more books do not exist or do not belong to the user" });
-    } */
+    
+    // Add userId to the book data
+    const newBook = await Books.create([{ ...bookData, userId: userId }], { session });
 
-    // 4. Find and atomically update the reading list in a single query
+    // 4. Add the new book's ID to the reading list
+    readingList.books.push(newBook[0]._id);
+    await readingList.save({ session });
+
+    // 5. Populate the reading list to include the new book's data in the response
+    const populatedReadingList = await readingList.populate('books');
+    
+    // 6. Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({
+      success: true,
+      message: 'Book created and added to reading list successfully.',
+      data: populatedReadingList
+    });
+
+  } catch (error) {
+    // 7. Abort transaction on any error
+    await session.abortTransaction();
+    session.endSession();
+
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: 'A duplicate entry was found in the database.' });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Error creating and adding book to reading list.',
+      error: error.message
+    });
+  }
+};
+
+exports.removeBookFromReadingList = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { id: readingListId } = req.params;
+    const { bookId } = req.body;
+
+    // Validate IDs
+    if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(readingListId) || !mongoose.isValidObjectId(bookId)) {
+      return res.status(400).json({ success: false, error: "Invalid ID format" });
+    }
+    
+    // Find and update the reading list with ownership check
     const updatedReadingList = await ReadingList.findOneAndUpdate(
-      { _id: id, userId: userId },
-      { books: books },
+      { _id: readingListId, userId: userId },
+      { $pull: { books: bookId } }, // $pull removes the specified item from the array
       { new: true, runValidators: true }
     ).populate('books');
 
-    // 5. Handle not found case
     if (!updatedReadingList) {
-      return res.status(404).json({
-        success: false,
-        message: 'Reading list not found or does not belong to the user'
-      });
+      return res.status(404).json({ success: false, message: 'Reading list not found or does not belong to the user.' });
     }
 
     res.status(200).json({
       success: true,
-      message: 'Reading list books updated successfully',
+      message: 'Book removed from reading list successfully',
       data: updatedReadingList
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating reading list books',
+      message: 'Error removing book from reading list',
       error: error.message
     });
   }

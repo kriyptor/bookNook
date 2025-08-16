@@ -7,7 +7,8 @@ const {
   createReadingList,
   updateReadingList,
   deleteReadingList,
-  updateReadingListBooks,
+  addBookToReadingList,
+  removeBookFromReadingList,
   deleteReadingWithBooksList
 } = require('../Controllers/readingList-controller');
 
@@ -29,7 +30,10 @@ router.delete('/:id', authenticate, deleteReadingList);
 // DELETE /api/reading-lists/:id/with-books - Delete a reading list and its books
 router.delete('/:id/with-books', authenticate, deleteReadingWithBooksList);
 
-// PUT /api/reading-lists/:id/books - Add/Remove books from reading list
-router.put('/:id/books', authenticate, updateReadingListBooks);
+// POST /api/reading-lists/:id/books - Add a book to a reading list
+router.post('/:id/books', authenticate, addBookToReadingList);
+
+// DELETE /api/reading-lists/:id/books/:bookId - Remove a book from a reading list
+router.put('/:id/books/:bookId', authenticate, removeBookFromReadingList);
 
 module.exports = router;
