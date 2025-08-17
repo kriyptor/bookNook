@@ -4,13 +4,14 @@ import Spinner from 'react-bootstrap/Spinner';
 import Auth from "./components/Auth";
 import Readinglistpage from "./components/Readinglistpage";
 import Profilepage from "./components/Profilepage";
+import Dashboard from "./components/Dashboard";
 import BookNookNavbar from "./components/BookNookNavbar";
 import Bookpage from "./components/Bookpage";
 import axios from 'axios'; 
 
 const App = () => {
   // State to manage authentication
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const apiEndPoint = `http://13.232.30.37`
@@ -73,7 +74,7 @@ const App = () => {
         <Route 
           path="/" 
           element={
-            isAuthenticated ? <Navigate to="/Readinglist" /> : <Readinglistpage/>
+            isAuthenticated ? <Navigate to="/Readinglist" /> : <Auth handleLogin={handleLogin} />
           } 
         />
         
@@ -82,6 +83,30 @@ const App = () => {
           path="/Readinglist" 
           element={
             isAuthenticated ? <Readinglistpage token={token}  /> : <Navigate to="/" />
+          } 
+        />
+
+        {/* Protected Home Route */}
+        <Route 
+          path="/Books" 
+          element={
+            isAuthenticated ? <Bookpage token={token} /> : <Navigate to="/" />
+          } 
+        />
+
+        {/* Protected Home Route */}
+        <Route 
+          path="/Dashboard" 
+          element={
+            isAuthenticated ? <Dashboard/> : <Navigate to="/" />
+          } 
+        />
+
+        {/* Protected Home Route */}
+        <Route 
+          path="/Profile" 
+          element={
+            isAuthenticated ? <Profilepage/> : <Navigate to="/" />
           } 
         />
 
