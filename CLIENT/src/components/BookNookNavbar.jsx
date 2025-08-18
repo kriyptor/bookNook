@@ -1,7 +1,7 @@
 import { PlusCircleFill } from 'react-bootstrap-icons'; // Import icon for buttons
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Navbar, Nav, Container, Button } from 'react-bootstrap';
+import { Navbar, Nav, NavDropdown, Container, Button } from 'react-bootstrap';
 import CreateReadingList from './CreateReadingList'; // Import the modal component
 import CreateBookModal from './CreateBookModal'; // Import the book creation modal
 
@@ -37,10 +37,40 @@ const BookNookNavbar = ({ onLogout }) => {
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="me-auto">
-              <Nav.Link onClick={() => handleNavigation('/dashboard')}>Dashboard</Nav.Link>
-              <Nav.Link onClick={() => handleNavigation('/books')}>Books</Nav.Link>
-              <Nav.Link onClick={() => handleNavigation('/reading-lists')}>Reading Lists</Nav.Link>
               <Nav.Link onClick={() => handleNavigation('/profile')}>Profile</Nav.Link>
+              <Nav.Link onClick={() => handleNavigation('/dashboard')}>Dashboard</Nav.Link>
+              {/* Redinglist Dropdown */}
+               <NavDropdown title="ReadingList" id="readinglist-nav-dropdown">
+                <NavDropdown.Item onClick={() => handleNavigation('/InprogressReadinglist')}>
+                  All In Progress Reading Lists
+                </NavDropdown.Item>
+                <NavDropdown.Item onClick={() => handleNavigation('/CompletedReadinglist')}>
+                  All Completed Reading Lists
+                </NavDropdown.Item>
+                <NavDropdown.Item onClick={() => handleNavigation('/NotStartedreadinglist')}>
+                  All Not completed Reading Lists
+                </NavDropdown.Item>
+                <NavDropdown.Divider />
+                <NavDropdown.Item onClick={() => handleNavigation('/AllReadinglist')}>
+                  All Reading List
+                </NavDropdown.Item>
+              </NavDropdown>
+              {/* Books Dropdown */}
+               <NavDropdown title="Books" id="books-nav-dropdown">
+                <NavDropdown.Item onClick={() => handleNavigation('/books')}>
+                  All Books
+                </NavDropdown.Item>
+                <NavDropdown.Item onClick={() => handleNavigation('/AllReadBooks')}>
+                  All Read Books
+                </NavDropdown.Item>
+                <NavDropdown.Item onClick={() => handleNavigation('/AllReadingBooks')}>
+                  All Reading Books
+                </NavDropdown.Item>
+                <NavDropdown.Divider />
+                <NavDropdown.Item onClick={() => handleNavigation('/FavoriteBooks')}>
+                  Favourite Books
+                </NavDropdown.Item>
+              </NavDropdown>
             </Nav>
             <Nav className="ms-auto align-items-center">
               <Button 

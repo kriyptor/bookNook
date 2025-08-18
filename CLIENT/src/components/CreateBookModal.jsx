@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, FormControl, FormLabel, Row, Col, Card, InputGroup } from 'react-bootstrap';
-// Icons from react-bootstrap-icons are not installed, so using plain text for now
-// import { Search, PlusCircleFill, TrashFill } from 'react-bootstrap-icons';
+import { Modal, Button, Form, Row, Col, Card, InputGroup, ListGroup } from 'react-bootstrap';
 
 // Mock data to simulate the Google Books API response
 const mockApiData = [
@@ -9,35 +7,35 @@ const mockApiData = [
     id: 1,
     title: 'The Lord of the Rings',
     author: 'J.R.R. Tolkien',
-    category: 'Fantasy',
+    category: 'Fiction',
     imageUrl: 'https://placehold.co/100x150/png?text=LotR'
   },
   {
     id: 2,
     title: 'The Hobbit',
     author: 'J.R.R. Tolkien',
-    category: 'Fantasy',
+    category: 'Fiction',
     imageUrl: 'https://placehold.co/100x150/png?text=Hobbit'
   },
   {
     id: 3,
     title: 'Dune',
     author: 'Frank Herbert',
-    category: 'Sci-Fi & Fantasy',
+    category: 'Fiction',
     imageUrl: 'https://placehold.co/100x150/png?text=Dune'
   },
   {
     id: 4,
     title: 'Dune Messiah',
     author: 'Frank Herbert',
-    category: 'Sci-Fi & Fantasy',
+    category: 'Fiction',
     imageUrl: 'https://placehold.co/100x150/png?text=Dune+Messiah'
   },
   {
     id: 5,
     title: '1984',
     author: 'George Orwell',
-    category: 'Dystopian',
+    category: 'Fiction',
     imageUrl: 'https://placehold.co/100x150/png?text=1984'
   },
 ];
@@ -59,11 +57,13 @@ const CreateBookModal = ({ show, onHide }) => {
   const [manualEntryFormData, setManualEntryFormData] = useState({
     title: '',
     author: '',
+    purchaseUrl: '',
+    price: '',
+    description: '',
     category: '',
     imageUrl: ''
   });
 
-  // Effect to perform search when the query changes
   useEffect(() => {
     if (searchQuery.length > 2) {
       const results = fetchBooks(searchQuery);
@@ -78,19 +78,32 @@ const CreateBookModal = ({ show, onHide }) => {
     setManualEntryFormData({ ...manualEntryFormData, [name]: value });
   };
 
-  const handleAddFromSearch = (book) => {
-    // Add the book if it's not already in the list
-    if (!booksToCreate.some(b => b.id === book.id)) {
-      setBooksToCreate([...booksToCreate, book]);
-    }
+  const handlePopulateManualForm = (book) => {
+    setManualEntryFormData({
+      ...manualEntryFormData,
+      title: book.title,
+      author: book.author,
+      category: book.category,
+      imageUrl: book.imageUrl,
+    });
+    setSearchQuery('');
+    setSearchResults([]);
   };
 
   const handleManualAdd = () => {
     if (manualEntryFormData.title && manualEntryFormData.author && manualEntryFormData.category) {
       setBooksToCreate([...booksToCreate, { ...manualEntryFormData, id: Date.now() }]);
-      setManualEntryFormData({ title: '', author: '', category: '', imageUrl: '' });
+      setManualEntryFormData({
+        title: '',
+        author: '',
+        purchaseUrl: '',
+        price: '',
+        description: '',
+        category: '',
+        imageUrl: ''
+      });
     } else {
-      alert('Title, author, and category are required for manual entry.');
+      alert('Title, author, and category are required for a book.');
     }
   };
 
@@ -102,7 +115,6 @@ const CreateBookModal = ({ show, onHide }) => {
     console.log('Books to be created:', booksToCreate);
     // TODO: Implement API call here to send the booksToCreate array
     onHide();
-    // Reset state after successful creation
     setBooksToCreate([]);
     setSearchResults([]);
     setSearchQuery('');
@@ -110,111 +122,111 @@ const CreateBookModal = ({ show, onHide }) => {
 
   return (
     <Modal show={show} onHide={onHide} fullscreen={true}>
-      <Modal.Header closeButton>
+      <Modal.Header closeButton className="bg-light border-bottom">
         <Modal.Title>Create New Book Entries</Modal.Title>
       </Modal.Header>
-      <Modal.Body className="d-flex flex-column">
-        {/* Search Bar and Results */}
-        <Row className="mb-4">
-          <Col md={12}>
-            <h4>Search for Books</h4>
+      <Modal.Body className="p-4 bg-white">
+        <Row className="g-4">
+          {/* Search Column */}
+          <Col md={6} className="border border-light-subtle rounded p-3">
+            <h5 className="mb-3 fw-bold">Search for Books</h5>
             <InputGroup className="mb-3">
-              <FormControl
+              <Form.Control
                 placeholder="Search by title or author..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="rounded-pill"
               />
-              <Button variant="outline-primary">Search</Button>
+              <Button variant="primary" className="rounded-pill ms-2">Search</Button>
             </InputGroup>
             {searchResults.length > 0 && (
-              <div className="search-results-dropdown p-2 rounded shadow-sm">
+              <ListGroup className="shadow-sm border-0 rounded overflow-auto" style={{ maxHeight: '250px' }}>
                 {searchResults.map(book => (
-                  <div key={book.id} className="d-flex justify-content-between align-items-center mb-2">
-                    <span>{book.title} by {book.author}</span>
-                    <Button variant="success" size="sm" onClick={() => handleAddFromSearch(book)}>Add</Button>
-                  </div>
+                  <ListGroup.Item key={book.id} className="d-flex justify-content-between align-items-center border-0">
+                    <div>
+                      <strong>{book.title}</strong> by {book.author} ({book.category})
+                    </div>
+                    <Button variant="outline-success" size="sm" onClick={() => handlePopulateManualForm(book)}>Add</Button>
+                  </ListGroup.Item>
                 ))}
-              </div>
+              </ListGroup>
             )}
           </Col>
-        </Row>
-        
-        <hr />
 
-        {/* Manual Entry Form */}
-        <Row className="mb-4">
-          <Col md={12}>
-            <h4>Or Enter Manually</h4>
+          {/* Manual Entry Column */}
+          <Col md={6} className="border border-light-subtle rounded p-3">
+            <h5 className="mb-3 fw-bold">Manual Entry</h5>
             <Form>
-              <Row>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <FormLabel>Title</FormLabel>
-                    <FormControl name="title" value={manualEntryFormData.title} onChange={handleManualFormChange} />
-                  </Form.Group>
-                </Col>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <FormLabel>Author</FormLabel>
-                    <FormControl name="author" value={manualEntryFormData.author} onChange={handleManualFormChange} />
-                  </Form.Group>
-                </Col>
-              </Row>
-              <Row>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <FormLabel>Category</FormLabel>
-                    <Form.Select name="category" value={manualEntryFormData.category} onChange={handleManualFormChange}>
-                      <option value="">Select Category</option>
-                      <option value="Fantasy">Fantasy</option>
-                      <option value="Sci-Fi & Fantasy">Sci-Fi & Fantasy</option>
-                      <option value="Other">Other</option>
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <FormLabel>Image URL</FormLabel>
-                    <FormControl name="imageUrl" value={manualEntryFormData.imageUrl} onChange={handleManualFormChange} />
-                  </Form.Group>
-                </Col>
-              </Row>
+              <Form.Group className="mb-3">
+                <Form.Label>Title</Form.Label>
+                <Form.Control name="title" value={manualEntryFormData.title} onChange={handleManualFormChange} className="rounded" />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Author</Form.Label>
+                <Form.Control name="author" value={manualEntryFormData.author} onChange={handleManualFormChange} className="rounded" />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Category</Form.Label>
+                <Form.Select name="category" value={manualEntryFormData.category} onChange={handleManualFormChange} className="rounded">
+                  <option value="">Select Category</option>
+                  <option value="Fiction">Fiction</option>
+                  <option value="Non-Fiction">Non-Fiction</option>
+                  <option value="Science & Technology">Science & Technology</option>
+                  <option value="Other">Other</option>
+                </Form.Select>
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Image URL (Optional)</Form.Label>
+                <Form.Control name="imageUrl" value={manualEntryFormData.imageUrl} onChange={handleManualFormChange} className="rounded" />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Purchase URL (Optional)</Form.Label>
+                <Form.Control name="purchaseUrl" value={manualEntryFormData.purchaseUrl} onChange={handleManualFormChange} className="rounded" />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Price (Optional)</Form.Label>
+                <Form.Control name="price" value={manualEntryFormData.price} onChange={handleManualFormChange} className="rounded" />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Description (Optional)</Form.Label>
+                <Form.Control as="textarea" rows={3} name="description" value={manualEntryFormData.description} onChange={handleManualFormChange} className="rounded" />
+              </Form.Group>
               <div className="d-flex justify-content-end">
-                <Button variant="primary" onClick={handleManualAdd}>
-                  <span className="me-2">+</span> Add Manually
+                <Button variant="primary" onClick={handleManualAdd} className="rounded-pill">
+                  + Add Manually
                 </Button>
               </div>
             </Form>
           </Col>
         </Row>
         
-        <hr />
+        <hr className="my-4" />
 
         {/* Books to Create List */}
-        <h4 className="mb-3">Books to Create ({booksToCreate.length})</h4>
-        <div className="flex-grow-1 overflow-auto">
-          <Row>
+        <h5 className="mb-3 fw-bold">Books to Create ({booksToCreate.length})</h5>
+        <div className="overflow-auto" style={{ maxHeight: '300px' }}>
+          <Row className="g-3">
             {booksToCreate.length === 0 ? (
-              <Col><p className="text-center text-muted">No books added yet.</p></Col>
+              <Col><p className="text-center text-muted fst-italic">No books added yet.</p></Col>
             ) : (
               booksToCreate.map((book, index) => (
-                <Col key={index} md={6} className="mb-3">
-                  <Card className="h-100 shadow-sm">
-                    <Card.Body className="d-flex align-items-center justify-content-between">
+                <Col key={index} xs={12} md={6} lg={4}>
+                  <Card className="h-100 shadow border-0 rounded">
+                    <Card.Body className="d-flex align-items-center justify-content-between p-3">
                       <div className="d-flex align-items-center">
                         <img 
                           src={book.imageUrl || 'https://placehold.co/60x90/png?text=No+Cover'} 
                           alt="Book Cover" 
                           style={{ width: '60px', height: '90px', objectFit: 'cover' }} 
-                          className="rounded me-3"
+                          className="rounded me-3 shadow-sm"
                         />
                         <div>
                           <h6 className="mb-1">{book.title}</h6>
-                          <p className="mb-0 text-muted">{book.author}</p>
+                          <p className="mb-0 text-muted small">{book.author} • {book.category}</p>
                         </div>
                       </div>
-                      <Button variant="danger" size="sm" onClick={() => handleRemoveBook(index)}>
-                        <span>-</span>
+                      <Button variant="outline-danger" size="sm" onClick={() => handleRemoveBook(index)} className="rounded-circle">
+                        -
                       </Button>
                     </Card.Body>
                   </Card>
@@ -224,11 +236,11 @@ const CreateBookModal = ({ show, onHide }) => {
           </Row>
         </div>
       </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={onHide}>
+      <Modal.Footer className="bg-light border-top">
+        <Button variant="secondary" onClick={onHide} className="rounded-pill">
           Cancel
         </Button>
-        <Button variant="success" onClick={handleCreateBooks} disabled={booksToCreate.length === 0}>
+        <Button variant="success" onClick={handleCreateBooks} disabled={booksToCreate.length === 0} className="rounded-pill">
           Create Books
         </Button>
       </Modal.Footer>

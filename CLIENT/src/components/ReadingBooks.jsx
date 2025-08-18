@@ -6,30 +6,19 @@ import { Container, Row, Col, Pagination } from 'react-bootstrap';
 // Mock data for 20 books (added mock summary/details for testing the modal)
 const mockBooks = [
   { id: 1, title: 'The Lord of the Rings', author: 'J.R.R. Tolkien', status: 'Reading', summary: '', details: '' },
-  { id: 2, title: 'The Hitchhiker\'s Guide to the Galaxy', author: 'Douglas Adams', status: 'To Read', summary: '', details: '' },
-  { id: 3, title: 'Dune', author: 'Frank Herbert', status: 'Read', summary: 'A complex sci-fi epic about politics and religion on a desert planet.', details: 'Learned about the long-term impacts of political decisions on ecology and culture.' },
+  { id: 2, title: 'The Hitchhiker\'s Guide to the Galaxy', author: 'Douglas Adams', status: 'Reading', summary: '', details: '' },
+  { id: 3, title: 'Dune', author: 'Frank Herbert', status: 'Reading', summary: 'A complex sci-fi epic about politics and religion on a desert planet.', details: 'Learned about the long-term impacts of political decisions on ecology and culture.' },
   { id: 4, title: '1984', author: 'George Orwell', status: 'Reading', summary: '', details: '' },
-  { id: 5, title: 'Brave New World', author: 'Aldous Huxley', status: 'To Read', summary: '', details: '' },
-  { id: 6, title: 'The Hobbit', author: 'J.R.R. Tolkien', status: 'Read', summary: 'A tale of a hobbit who joins a quest to reclaim a dragon\'s treasure.', details: 'The importance of courage in the face of overwhelming odds.' },
+  { id: 5, title: 'Brave New World', author: 'Aldous Huxley', status: 'Reading', summary: '', details: '' },
+  { id: 6, title: 'The Hobbit', author: 'J.R.R. Tolkien', status: 'Reading', summary: 'A tale of a hobbit who joins a quest to reclaim a dragon\'s treasure.', details: 'The importance of courage in the face of overwhelming odds.' },
   { id: 7, title: 'Fahrenheit 451', author: 'Ray Bradbury', status: 'Reading', summary: '', details: '' },
-  { id: 8, title: 'The Catcher in the Rye', author: 'J.D. Salinger', status: 'To Read', summary: '', details: '' },
-  { id: 9, title: 'To Kill a Mockingbird', author: 'Harper Lee', status: 'Read', summary: 'A story about racial injustice and the loss of innocence in the American South.', details: 'Gained a deeper understanding of empathy and moral courage.' },
+  { id: 8, title: 'The Catcher in the Rye', author: 'J.D. Salinger', status: 'Reading', summary: '', details: '' },
+  { id: 9, title: 'To Kill a Mockingbird', author: 'Harper Lee', status: 'Reading', summary: 'A story about racial injustice and the loss of innocence in the American South.', details: 'Gained a deeper understanding of empathy and moral courage.' },
   { id: 10, title: 'Pride and Prejudice', author: 'Jane Austen', status: 'Reading', summary: '', details: '' },
-  { id: 11, title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', status: 'To Read', summary: '', details: '' },
-  { id: 12, title: 'Moby Dick', author: 'Herman Melville', status: 'Read', summary: 'The obsessive quest of Captain Ahab for revenge on the giant white whale.', details: 'The dangers of obsession and the struggle between good and evil.' },
-  { id: 13, title: 'War and Peace', author: 'Leo Tolstoy', status: 'Reading', summary: '', details: '' },
-  { id: 14, title: 'The Odyssey', author: 'Homer', status: 'To Read', summary: '', details: '' },
-  { id: 15, title: 'Harry Potter and the Sorcerer\'s Stone', author: 'J.K. Rowling', status: 'Read', summary: 'A young wizard discovers his magical heritage and battles an evil sorcerer.', details: 'The power of friendship and bravery.' },
-  { id: 16, title: 'The Alchemist', author: 'Paulo Coelho', status: 'Reading', summary: '', details: '' },
-  { id: 17, title: 'The Da Vinci Code', author: 'Dan Brown', status: 'To Read', summary: '', details: '' },
-  { id: 18, title: 'The Silent Patient', author: 'Alex Michaelides', status: 'Read', summary: 'A psychotherapist tries to unravel the mystery of a famous painter who killed her husband.', details: 'The complex nature of trauma and the secrets people keep.' },
-  { id: 19, title: 'Educated', author: 'Tara Westover', status: 'Reading', summary: '', details: '' },
-  { id: 20, title: 'Becoming', author: 'Michelle Obama', status: 'To Read', summary: '', details: '' },
 ];
 
 
-
-const Bookpage = () => {
+const ReadingBooks = () => {
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const booksPerPage = 6;
@@ -102,4 +91,4 @@ const Bookpage = () => {
   );
 };
 
-export default Bookpage;
+export default ReadingBooks;
