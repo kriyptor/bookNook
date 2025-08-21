@@ -1,58 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, Row, Col, Card, InputGroup, ListGroup } from 'react-bootstrap';
+import { Modal, Button, Form, Row, Col, Card, InputGroup, ListGroup, Spinner } from 'react-bootstrap';
+import axios from 'axios';
 
-// Mock data to simulate the Google Books API response
-const mockApiData = [
-  {
-    id: 1,
-    title: 'The Lord of the Rings',
-    author: 'J.R.R. Tolkien',
-    category: 'Fiction',
-    imageUrl: 'https://placehold.co/100x150/png?text=LotR'
-  },
-  {
-    id: 2,
-    title: 'The Hobbit',
-    author: 'J.R.R. Tolkien',
-    category: 'Fiction',
-    imageUrl: 'https://placehold.co/100x150/png?text=Hobbit'
-  },
-  {
-    id: 3,
-    title: 'Dune',
-    author: 'Frank Herbert',
-    category: 'Fiction',
-    imageUrl: 'https://placehold.co/100x150/png?text=Dune'
-  },
-  {
-    id: 4,
-    title: 'Dune Messiah',
-    author: 'Frank Herbert',
-    category: 'Fiction',
-    imageUrl: 'https://placehold.co/100x150/png?text=Dune+Messiah'
-  },
-  {
-    id: 5,
-    title: '1984',
-    author: 'George Orwell',
-    category: 'Fiction',
-    imageUrl: 'https://placehold.co/100x150/png?text=1984'
-  },
-];
+// IMPORTANT: Replace with your actual Google Books API Key
+const GOOGLE_BOOKS_API_KEY = 'AIzaSyAW8tBqKgUGzpQDSfIjaurW3eY45brNBcc';
+const GOOGLE_BOOKS_API_URL = 'https://www.googleapis.com/books/v1/volumes';
 
-// Helper to simulate API call to Google Books
-const fetchBooks = (query) => {
-  if (!query) return [];
-  const lowerCaseQuery = query.toLowerCase();
-  return mockApiData.filter(book => 
-    book.title.toLowerCase().includes(lowerCaseQuery) || 
-    book.author.toLowerCase().includes(lowerCaseQuery)
-  );
+// Custom hook to handle API fetching logic using Axios
+const useGoogleBooks = (query, triggerSearch) => {
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const source = axios.CancelToken.source();
+
+    if (triggerSearch && query.length > 2) {
+      const fetchBooks = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          const response = await axios.get(
+            `${GOOGLE_BOOKS_API_URL}?q=${query}&key=${GOOGLE_BOOKS_API_KEY}`,
+            { cancelToken: source.token }
+          );
+          const data = response.data;
+          setBooks(data.items || []);
+        } catch (err) {
+          if (axios.isCancel(err)) {
+            console.log('Request canceled:', err.message);
+          } else {
+            setError('Failed to fetch books. Please check your API key.');
+            setBooks([]);
+          }
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchBooks();
+    } else {
+      setBooks([]);
+    }
+
+    return () => {
+      source.cancel('Component unmounted or query changed');
+    };
+  }, [query, triggerSearch]);
+
+  return { books, loading, error };
 };
 
 const CreateBookModal = ({ show, onHide }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
+  const [triggerSearch, setTriggerSearch] = useState(false);
+  const { books: searchResults, loading, error } = useGoogleBooks(searchQuery, triggerSearch);
   const [booksToCreate, setBooksToCreate] = useState([]);
   const [manualEntryFormData, setManualEntryFormData] = useState({
     title: '',
@@ -64,15 +65,6 @@ const CreateBookModal = ({ show, onHide }) => {
     imageUrl: ''
   });
 
-  useEffect(() => {
-    if (searchQuery.length > 2) {
-      const results = fetchBooks(searchQuery);
-      setSearchResults(results);
-    } else {
-      setSearchResults([]);
-    }
-  }, [searchQuery]);
-
   const handleManualFormChange = (e) => {
     const { name, value } = e.target;
     setManualEntryFormData({ ...manualEntryFormData, [name]: value });
@@ -80,14 +72,16 @@ const CreateBookModal = ({ show, onHide }) => {
 
   const handlePopulateManualForm = (book) => {
     setManualEntryFormData({
-      ...manualEntryFormData,
-      title: book.title,
-      author: book.author,
-      category: book.category,
-      imageUrl: book.imageUrl,
+      title: book.volumeInfo.title || '',
+      author: book.volumeInfo.authors ? book.volumeInfo.authors.join(', ') : '',
+      description: book.volumeInfo.description || '',
+      category: book.volumeInfo.categories ? book.volumeInfo.categories[0] : '',
+      imageUrl: book.volumeInfo.imageLinks?.thumbnail || '',
+      purchaseUrl: book.saleInfo?.buyLink || '',
+      price: book.saleInfo?.listPrice?.amount || '',
     });
     setSearchQuery('');
-    setSearchResults([]);
+    setTriggerSearch(false);
   };
 
   const handleManualAdd = () => {
@@ -112,11 +106,10 @@ const CreateBookModal = ({ show, onHide }) => {
   };
 
   const handleCreateBooks = () => {
-    console.log('Books to be created:', booksToCreate);
+    console.log(booksToCreate);
     // TODO: Implement API call here to send the booksToCreate array
     onHide();
     setBooksToCreate([]);
-    setSearchResults([]);
     setSearchQuery('');
   };
 
@@ -137,14 +130,30 @@ const CreateBookModal = ({ show, onHide }) => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="rounded-pill"
               />
-              <Button variant="primary" className="rounded-pill ms-2">Search</Button>
+              <Button 
+                variant="primary" 
+                className="rounded-pill ms-2"
+                onClick={() => setTriggerSearch(true)}
+              >
+                Search
+              </Button>
             </InputGroup>
+            {loading && <div className="text-center"><Spinner animation="border" size="sm" /> Searching...</div>}
+            {error && <div className="text-danger text-center">{error}</div>}
             {searchResults.length > 0 && (
-              <ListGroup className="shadow-sm border-0 rounded overflow-auto" style={{ maxHeight: '250px' }}>
+              <ListGroup className="shadow-sm border-0 rounded overflow-auto w-100" style={{ maxHeight: '250px' }}>
                 {searchResults.map(book => (
                   <ListGroup.Item key={book.id} className="d-flex justify-content-between align-items-center border-0">
-                    <div>
-                      <strong>{book.title}</strong> by {book.author} ({book.category})
+                    <div className="d-flex align-items-center">
+                      <img 
+                        src={book.volumeInfo.imageLinks?.smallThumbnail || 'https://placehold.co/60x90/png?text=No+Cover'} 
+                        alt="Book Cover" 
+                        className="rounded me-2"
+                      />
+                      <div>
+                        <strong className="d-block">{book.volumeInfo.title}</strong>
+                        <span className="text-muted small">by {book.volumeInfo.authors?.join(', ') || 'Unknown'}</span>
+                      </div>
                     </div>
                     <Button variant="outline-success" size="sm" onClick={() => handlePopulateManualForm(book)}>Add</Button>
                   </ListGroup.Item>
@@ -214,10 +223,10 @@ const CreateBookModal = ({ show, onHide }) => {
                   <Card className="h-100 shadow border-0 rounded">
                     <Card.Body className="d-flex align-items-center justify-content-between p-3">
                       <div className="d-flex align-items-center">
-                        <img 
-                          src={book.imageUrl || 'https://placehold.co/60x90/png?text=No+Cover'} 
-                          alt="Book Cover" 
-                          style={{ width: '60px', height: '90px', objectFit: 'cover' }} 
+                        <img
+                          src={book.imageUrl || 'https://placehold.co/60x90/png?text=No+Cover'}
+                          alt="Book Cover"
+                          style={{ width: '60px', height: '90px', objectFit: 'cover' }}
                           className="rounded me-3 shadow-sm"
                         />
                         <div>
