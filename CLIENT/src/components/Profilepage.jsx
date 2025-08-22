@@ -8,7 +8,7 @@ const ProfilePage = () => {
     name: 'Kriyptor',
     username: 'kriyptor',
     email: 'kriyptor@example.com',
-    profilePic: 'https://placehold.co/150x150/png?text=KP' // Placeholder image
+    profilePic: 'https://placehold.co/150x150/png?text=SK' // Placeholder image
   });
 
   const [showModal, setShowModal] = useState(false);

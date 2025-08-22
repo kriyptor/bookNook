@@ -43,9 +43,12 @@ function CompletedReadinglist() {
     };
   
     return (
-      <Container className="my-5">
-        <h2 className="mb-4 text-center">Your In progress Reading Lists</h2>
-        
+       <Container className="my-4">
+            <h2 className="mb-4 text-center">
+              <span className='badge bg-success'>
+                Your Completed Reading Lists
+              </span>
+            </h2>
         {/* Reading List Cards Grid */}
         <Row xs={1} sm={2} lg={3} className="g-4">
           {currentItems.map((list) => {

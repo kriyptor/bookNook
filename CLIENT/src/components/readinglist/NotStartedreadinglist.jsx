@@ -44,9 +44,12 @@ const [currentPage, setCurrentPage] = useState(1);
   };
 
   return (
-    <Container className="my-5">
-      <h2 className="mb-4 text-center">Your Not started Reading Lists</h2>
-      
+    <Container className="my-4">
+      <h2 className="mb-4 text-center">
+        <span className='badge bg-warning'>
+          Your Not started Reading Lists
+        </span>
+      </h2>
       {/* Reading List Cards Grid */}
       <Row xs={1} sm={2} lg={3} className="g-4">
         {currentItems.map((list) => {

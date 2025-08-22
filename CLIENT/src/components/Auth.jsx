@@ -1,22 +1,27 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Form, Button, Alert, Tabs, Tab } from 'react-bootstrap';
- 
+import { Container, Row, Col, Card, Form, Button, Alert, Tabs, Tab, InputGroup } from 'react-bootstrap';
+import { Eye, EyeSlash } from 'react-bootstrap-icons';
+
 const AuthComponent = ({ handleLogin }) => {
-  const apiEndPoint = 'http://13.232.30.37'
+  const apiEndPoint = 'http://13.232.30.37';
+  const navigate = useNavigate();
+
   // State for different forms
   const [key, setKey] = useState('signin');
   
   // Sign In States
   const [signInEmail, setSignInEmail] = useState('');
   const [signInPassword, setSignInPassword] = useState('');
+  const [showSignInPassword, setShowSignInPassword] = useState(false);
   
   // Sign Up States
   const [signUpName, setSignUpName] = useState('');
   const [signUpEmail, setSignUpEmail] = useState('');
   const [signUpPassword, setSignUpPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   
   // Forgot Password State
   const [forgotEmail, setForgotEmail] = useState('');
@@ -32,7 +37,6 @@ const AuthComponent = ({ handleLogin }) => {
   };
 
   const validatePassword = (password) => {
-    // At least 8 characters, one uppercase, one lowercase, one number
     const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
     return re.test(password);
   };
@@ -43,7 +47,6 @@ const AuthComponent = ({ handleLogin }) => {
     setError('');
     setSuccess('');
 
-    // Basic validation
     if (!signInEmail || !signInPassword) {
       setError('Please fill in all fields');
       return;
@@ -54,58 +57,52 @@ const AuthComponent = ({ handleLogin }) => {
       return;
     }
 
-
     try {
-      console.log('Sign In Attempt', { email: signInEmail });
-
       const response = await axios.post(`${apiEndPoint}/user/sign-in`, {
         email: signInEmail,
         password: signInPassword
       });
 
-      console.log(response)
-
-      handleLogin(response.data.token); // Update authentication state in parent change to-> localStorage.setItem('token', response.data.token)
+      localStorage.setItem('token', response.data.token);
       setSuccess('Sign in successful!');
-      //navigate('/home'); // Programmatically navigate to home page
+      navigate('/home');
     } catch (err) {
       setError('Sign in failed. Please check your credentials.');
     }
   };
 
   // Sign Up Handler
-  const handleSignUp = async(e) => {
+  const handleSignUp = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
-    // Validation checks
     if (!signUpName || !signUpEmail || !signUpPassword || !confirmPassword) {
       setError('Please fill in all fields');
       return;
     }
 
+    if (!validateEmail(signUpEmail)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    if (!validatePassword(signUpPassword)) {
+      setError('Password must be 8+ characters, include uppercase, lowercase, and number');
+      return;
+    }
 
     if (signUpPassword !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
-    // TODO: Implement actual sign-up logic with backend
     try {
-      // Simulated sign-up
-      console.log('Sign Up Attempt', { 
-        name: signUpName, 
-        email: signUpEmail 
-      });
-        //shivak@12345
       const response = await axios.post(`${apiEndPoint}/user/sign-up`, {
         name: signUpName,
         email: signUpEmail,
         password: signUpPassword
       });
-
-      //console.log(response.data)
 
       setSuccess('Sign up successful! Please sign in.');
       setKey('signin');
@@ -130,11 +127,7 @@ const AuthComponent = ({ handleLogin }) => {
       return;
     }
 
-    // TODO: Implement actual forgot password logic with backend
     try {
-      // Simulated password reset
-      console.log('Password Reset Request', { email: forgotEmail });
-
       const response = await axios.post(`${apiEndPoint}/password/forgot-password`, {
         emailId: forgotEmail
       });
@@ -146,52 +139,66 @@ const AuthComponent = ({ handleLogin }) => {
   };
 
   return (
-    <Container className="mt-5">
+    <Container className="my-3">
       <Row className="justify-content-center">
-        <Col md={6}>
-          <Card>
-            <Card.Body>
-              {/* Error/Success Alerts */}
-              {error && <Alert variant="danger">{error}</Alert>}
-              {success && <Alert variant="success">{success}</Alert>}
+        <Col md={8} lg={6}>
+          <Card className="shadow-sm border-1">
+            <Card.Body className="p-4">
+              <h3 className="text-center mb-3 fw-bold text-bg-primary rounded p-2">Welcome to BookNook</h3>
+              <hr />
+              {error && <Alert variant="danger" className="rounded-pill">{error}</Alert>}
+              {success && <Alert variant="success" className="rounded-pill">{success}</Alert>}
 
-              {/* Tabs for different authentication methods */}
               <Tabs
                 id="auth-tabs"
                 activeKey={key}
                 onSelect={(k) => setKey(k)}
-                className="mb-3"
+                className="mb-4"
+                variant="pills"
+                justify
               >
                 {/* Sign In Tab */}
                 <Tab eventKey="signin" title="Sign In">
                   <Form onSubmit={handleSignIn}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Email address</Form.Label>
+                      <Form.Label>Email Address</Form.Label>
                       <Form.Control 
                         type="email" 
-                        placeholder="Enter email" 
+                        placeholder="Enter your email" 
                         value={signInEmail}
                         onChange={(e) => setSignInEmail(e.target.value)}
+                        className="rounded-pill"
                       />
                     </Form.Group>
 
                     <Form.Group className="mb-3">
                       <Form.Label>Password</Form.Label>
-                      <Form.Control 
-                        type="password" 
-                        placeholder="Password" 
-                        value={signInPassword}
-                        onChange={(e) => setSignInPassword(e.target.value)}
-                      />
+                      <InputGroup>
+                        <Form.Control 
+                          type={showSignInPassword ? 'text' : 'password'} 
+                          placeholder="Enter your password" 
+                          value={signInPassword}
+                          onChange={(e) => setSignInPassword(e.target.value)}
+                          className="rounded-pill rounded-end-0"
+                        />
+                        <Button
+                          variant="outline-secondary"
+                          onClick={() => setShowSignInPassword(!showSignInPassword)}
+                          className="rounded-pill rounded-start-0"
+                        >
+                          {showSignInPassword ? <EyeSlash /> : <Eye />}
+                        </Button>
+                      </InputGroup>
                     </Form.Group>
 
-                    <div className="d-flex justify-content-between">
-                      <Button variant="primary" type="submit">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <Button variant="primary" type="submit" className="rounded-pill px-4">
                         Sign In
                       </Button>
                       <Button 
                         variant="link" 
                         onClick={() => setKey('forgotpassword')}
+                        className="text-decoration-none"
                       >
                         Forgot Password?
                       </Button>
@@ -206,30 +213,42 @@ const AuthComponent = ({ handleLogin }) => {
                       <Form.Label>Full Name</Form.Label>
                       <Form.Control 
                         type="text" 
-                        placeholder="Enter full name" 
+                        placeholder="Enter your full name" 
                         value={signUpName}
                         onChange={(e) => setSignUpName(e.target.value)}
+                        className="rounded-pill"
                       />
                     </Form.Group>
 
                     <Form.Group className="mb-3">
-                      <Form.Label>Email address</Form.Label>
+                      <Form.Label>Email Address</Form.Label>
                       <Form.Control 
                         type="email" 
-                        placeholder="Enter email" 
+                        placeholder="Enter your email" 
                         value={signUpEmail}
                         onChange={(e) => setSignUpEmail(e.target.value)}
+                        className="rounded-pill"
                       />
                     </Form.Group>
 
                     <Form.Group className="mb-3">
                       <Form.Label>Password</Form.Label>
-                      <Form.Control 
-                        type="password" 
-                        placeholder="Password" 
-                        value={signUpPassword}
-                        onChange={(e) => setSignUpPassword(e.target.value)}
-                      />
+                      <InputGroup>
+                        <Form.Control 
+                          type={showSignUpPassword ? 'text' : 'password'} 
+                          placeholder="Create a password" 
+                          value={signUpPassword}
+                          onChange={(e) => setSignUpPassword(e.target.value)}
+                          className="rounded-pill rounded-end-0"
+                        />
+                        <Button
+                          variant="outline-secondary"
+                          onClick={() => setShowSignUpPassword(!showSignUpPassword)}
+                          className="rounded-pill rounded-start-0"
+                        >
+                          {showSignUpPassword ? <EyeSlash /> : <Eye />}
+                        </Button>
+                      </InputGroup>
                       <Form.Text className="text-muted">
                         Must be 8+ characters, include uppercase, lowercase, and number
                       </Form.Text>
@@ -237,15 +256,25 @@ const AuthComponent = ({ handleLogin }) => {
 
                     <Form.Group className="mb-3">
                       <Form.Label>Confirm Password</Form.Label>
-                      <Form.Control 
-                        type="password" 
-                        placeholder="Confirm Password" 
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                      />
+                      <InputGroup>
+                        <Form.Control 
+                          type={showSignUpPassword ? 'text' : 'password'} 
+                          placeholder="Confirm your password" 
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="rounded-pill rounded-end-0"
+                        />
+                        <Button
+                          variant="outline-secondary"
+                          onClick={() => setShowSignUpPassword(!showSignUpPassword)}
+                          className="rounded-pill rounded-start-0"
+                        >
+                          {showSignUpPassword ? <EyeSlash /> : <Eye />}
+                        </Button>
+                      </InputGroup>
                     </Form.Group>
 
-                    <Button variant="success" type="submit">
+                    <Button variant="success" type="submit" className="rounded-pill px-4">
                       Sign Up
                     </Button>
                   </Form>
@@ -255,19 +284,20 @@ const AuthComponent = ({ handleLogin }) => {
                 <Tab eventKey="forgotpassword" title="Forgot Password">
                   <Form onSubmit={handleForgotPassword}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Email address</Form.Label>
+                      <Form.Label>Email Address</Form.Label>
                       <Form.Control 
                         type="email" 
-                        placeholder="Enter email" 
+                        placeholder="Enter your email" 
                         value={forgotEmail}
                         onChange={(e) => setForgotEmail(e.target.value)}
+                        className="rounded-pill"
                       />
                       <Form.Text className="text-muted">
                         We'll send a password reset link to this email
                       </Form.Text>
                     </Form.Group>
 
-                    <Button variant="warning" type="submit">
+                    <Button variant="warning" type="submit" className="rounded-pill px-4">
                       Send Reset Link
                     </Button>
                   </Form>

@@ -1,11 +1,11 @@
-import { PlusCircleFill } from 'react-bootstrap-icons'; // Import icon for buttons
+import { PlusCircleFill, BoxArrowRight } from 'react-bootstrap-icons'; // Import icons
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Navbar, Nav, NavDropdown, Container, Button } from 'react-bootstrap';
 import CreateReadingList from './CreateReadingList'; // Import the modal component
 import CreateBookModal from './CreateBookModal'; // Import the book creation modal
 
-const BookNookNavbar = ({ onLogout }) => {
+const BookNookNavbar = ({ isAuthenticated, onLogout }) => {
   const navigate = useNavigate();  
   const [token, setToken] = useState(null);
   const [showModal, setShowModal] = useState(false); // State to control the modal
@@ -31,16 +31,17 @@ const BookNookNavbar = ({ onLogout }) => {
 
   return (
     <>
-      <Navbar bg="primary" variant="dark" expand="lg" sticky='top'>
+      <Navbar bg="primary" expand="lg" sticky='top'>
         <Container>
           <Navbar.Brand href="/">BookNook</Navbar.Brand>
+          {isAuthenticated && <>
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="me-auto">
               <Nav.Link onClick={() => handleNavigation('/profile')}>Profile</Nav.Link>
               <Nav.Link onClick={() => handleNavigation('/dashboard')}>Dashboard</Nav.Link>
               {/* Redinglist Dropdown */}
-               <NavDropdown title="ReadingList" id="readinglist-nav-dropdown">
+               <NavDropdown title="Reading List" id="readinglist-nav-dropdown">
                 <NavDropdown.Item onClick={() => handleNavigation('/InprogressReadinglist')}>
                   All In Progress Reading Lists
                 </NavDropdown.Item>
@@ -74,24 +75,32 @@ const BookNookNavbar = ({ onLogout }) => {
             </Nav>
             <Nav className="ms-auto align-items-center">
               <Button 
-                variant="outline-light" 
-                className="me-2"
-                onClick={() => setShowModal(true)} // Open the modal on click
+                variant="success" 
+                className="d-flex align-items-center me-2"
+                onClick={() => setShowModal(true)}
               >
-                New Reading List
+                <span className="me-2">Create Reading List</span>
+                <PlusCircleFill size={20} />
               </Button>
               <Button 
-                variant="outline-light" 
-                className="me-4"
+                variant="warning" 
+                className="d-flex align-items-center me-4"
                 onClick={() => setShowBookModal(true)}
               >
-                New Book
+                <span className="me-2">Add Book</span>
+                <PlusCircleFill size={20} />
               </Button>
-              <Button variant="danger" onClick={handleLogout}>
-                Logout
+              <Button 
+                variant="danger" 
+                className="d-flex align-items-center"
+                onClick={handleLogout}
+              >
+                <span className="me-2">Logout</span>
+                <BoxArrowRight size={20} />
               </Button>
             </Nav>
-          </Navbar.Collapse>
+          </Navbar.Collapse>  
+          </>}
         </Container>
       </Navbar>
 

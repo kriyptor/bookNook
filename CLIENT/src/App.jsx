@@ -12,6 +12,7 @@ import BookNookNavbar from "./components/BookNookNavbar";
 import Bookpage from "./components/Bookpage";
 import ReadBooks from "./components/ReadBooks";
 import ReadingBooks from "./components/ReadingBooks"
+import SingleReadingListPage from "./components/readinglist/SingleReadingListPage";
 import axios from 'axios'; 
 
 const App = () => {
@@ -67,12 +68,11 @@ const App = () => {
   return (
     <Router>
       {/* Navbar only shown when authenticated */}
-      {isAuthenticated && 
         <BookNookNavbar 
+          isAuthenticated={isAuthenticated}
           onLogout={handleLogout} 
           token={token} // Add userId if needed in navbar
         />
-      }
 
       <Routes>
         {/* Default route redirects based on authentication */}
@@ -121,6 +121,14 @@ const App = () => {
           path="/Readinglist" 
           element={
             isAuthenticated ? <Readinglistpage token={token}  /> : <Navigate to="/" />
+          } 
+        />
+
+         {/* Protected Home Route */}
+        <Route 
+          path="/reading-list/:listId" 
+          element={
+            isAuthenticated ? <SingleReadingListPage token={token} /> : <Navigate to="/" />
           } 
         />
 
