@@ -1,6 +1,6 @@
 import { Card, Button } from "react-bootstrap";
 
-function ReadingListCard({ title, status, color, totalBooks }) {
+function ReadingListCard({ title, status, color, totalBooks, onView, onDelete }) {
   return (
     <Card className="h-100 shadow-sm">
       <Card.Body>
@@ -13,8 +13,8 @@ function ReadingListCard({ title, status, color, totalBooks }) {
         </div>
       </Card.Body>
       <Card.Footer className="d-flex justify-content-between">
-        <Button variant="danger">Delete List</Button>
-        <Button variant="outline-primary">View List</Button>
+        <Button variant="danger" onClick={onDelete}>Delete List</Button>
+        <Button variant="outline-primary" onClick={onView}>View List</Button>
       </Card.Footer>
     </Card>
   );

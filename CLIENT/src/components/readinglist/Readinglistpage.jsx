@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Button, Pagination } from 'react-bootstrap';
+import { Container, Row, Col, Pagination } from 'react-bootstrap';
+import ReadingListCard from './ReadingListCard';
 import DeleteReadingListModal from './DeleteReadingListModal';
 
 const mockReadingLists = [
@@ -75,36 +76,14 @@ const Readinglistpage = () => {
             const { status, color } = getReadingListStatus(list.totalBooks, list.completedBooks);
             return (
               <Col key={list.id}>
-                <Card className="h-100 shadow-sm">
-                  <Card.Body>
-                    <Card.Title className="fs-5">{list.title}</Card.Title>
-                    <Card.Subtitle className="mb-2 text-muted">
-                      {list.totalBooks} book(s)
-                    </Card.Subtitle>
-                    <div className="mt-3">
-                      <span className={`badge bg-${color}`}>
-                        {status}
-                      </span>
-                    </div>
-                  </Card.Body>
-                  <Card.Footer className="bg-white border-0 pt-0 d-flex justify-content-end align-items-center">
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      className="me-2"
-                      onClick={() => handleShowDeleteModal(list.id)}
-                    >
-                      Delete
-                    </Button>
-                    <Button 
-                      variant="primary" 
-                      size="sm"
-                      onClick={() => handleViewList(list.id)}
-                    >
-                      View List
-                    </Button>
-                  </Card.Footer>
-                </Card>
+                <ReadingListCard
+                  title={list.title}
+                  status={status}
+                  color={color}
+                  totalBooks={list.totalBooks}
+                  onView={() => handleViewList(list.id)}
+                  onDelete={() => handleShowDeleteModal(list.id)}
+                />
               </Col>
             );
           })}

@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Spinner, Alert, Button } from 'react-bootstrap';
+import { Container, Row, Col, Card, Spinner, Alert, Button, Modal, Form } from 'react-bootstrap';
 // The following package is not a part of react-bootstrap core and needs to be installed.
 // import { ArrowLeft } from 'react-bootstrap-icons';
+import BookCard from '../BookCard';
+import EditBookModal from '../EditBookModal'
+import DeleteBookModal from './DeleteBookModal';
 
-// Mock data to simulate the API response for a single reading list
+// A simple BookCard component is now defined in this file to make it a self-contained artifact.
 const mockReadingList = {
   id: "1",
   title: "My Favorites",
@@ -18,32 +21,44 @@ const mockReadingList = {
   ],
 };
 
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'Reading':
-      return 'primary';
-    case 'Read':
-      return 'success';
-    case 'To Read':
-      return 'secondary';
-    default:
-      return 'light';
-  }
-};
-
 const SingleReadingListPage = () => {
   const { listId } = useParams();
-  const navigate = useNavigate(); // Initialize the navigate hook
+  const navigate = useNavigate();
   const [readingList, setReadingList] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [bookToDelete, setBookToDelete] = useState(null);
+
+  const handleEditClick = (book) => {
+    setSelectedBook(book);
+    setShowEditModal(true);
+  };
+  
+  const handleDeleteClick = (book) => {
+    setBookToDelete(book);
+    setShowDeleteModal(true);
+  };
+  
+  const handleConfirmDelete = (bookId, type) => {
+    console.log(`Deleting book ID ${bookId} with type: ${type}`);
+    // This is where you would call your API endpoint
+    // For example:
+    // if (type === 'delete') {
+    //   axios.delete(`/api/books/${bookId}`);
+    // } else {
+    //   axios.put(`/api/reading-lists/${listId}/remove-book`, { bookId });
+    // }
+  };
 
   useEffect(() => {
     const fetchReadingList = async () => {
       try {
         setLoading(true);
         setError(null);
-        await new Promise(resolve => setTimeout(resolve, 500)); 
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         if (listId === mockReadingList.id) {
           setReadingList(mockReadingList);
@@ -100,23 +115,31 @@ const SingleReadingListPage = () => {
       <hr />
       
       <h4 className="mb-4">Books in this List</h4>
-      <Row xs={1} md={2} lg={4} className="g-4">
+      <Row xs={1} sm={2} lg={3} className="g-4">
         {readingList.books.map((book) => (
           <Col key={book.id}>
-            <Card className="h-100 shadow-sm">
-              <Card.Body>
-                <Card.Title className="fs-5">{book.title}</Card.Title>
-                <Card.Subtitle className="mb-2 text-muted">{book.author}</Card.Subtitle>
-                <div className="mt-3">
-                  <span className={`badge bg-${getStatusColor(book.status)}`}>
-                    {book.status}
-                  </span>
-                </div>
-              </Card.Body>
-            </Card>
+            <BookCard
+                title={book.title}
+                author={book.author}
+                status={book.status}
+                onEdit={() => handleEditClick(book)}
+                onDelete={() => handleDeleteClick(book)}
+                // Add other props as needed
+            />
           </Col>
         ))}
       </Row>
+      <EditBookModal
+        show={showEditModal}
+        onHide={() => setShowEditModal(false)}
+        book={selectedBook}
+      />
+      <DeleteBookModal
+        show={showDeleteModal}
+        onHide={() => setShowDeleteModal(false)}
+        bookId={bookToDelete?.id}
+        onConfirmDelete={handleConfirmDelete}
+      />
     </Container>
   );
 };

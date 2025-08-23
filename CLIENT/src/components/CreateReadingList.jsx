@@ -341,7 +341,7 @@ const CreateReadingList = ({ show, onHide }) => {
             ) : (
               books.map((book, index) => (
                 <Col key={index} xs={12} md={6} lg={4}>
-                  <Card className="h-100 shadow border-0 rounded">
+                  <Card className="h-100 border-1 rounded bg-light">
                     <Card.Body className="d-flex align-items-center justify-content-between p-3">
                       <div className="d-flex align-items-center">
                         <img 

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal, Button, Form, Row, Col, Card, InputGroup, ListGroup, Spinner } from 'react-bootstrap';
+import { PlusCircleFill, Trash, JournalCheck, Search, XCircle } from 'react-bootstrap-icons'; 
 import axios from 'axios';
 
 // IMPORTANT: Replace with your actual Google Books API Key
@@ -101,6 +102,18 @@ const CreateBookModal = ({ show, onHide }) => {
     }
   };
 
+  const handleClearEntry = () => {
+    setManualEntryFormData({
+      title: '',
+      author: '',
+      purchaseUrl: '',
+      price: '',
+      description: '',
+      category: '',
+      imageUrl: ''
+    });
+  };
+
   const handleRemoveBook = (index) => {
     setBooksToCreate(booksToCreate.filter((_, i) => i !== index));
   };
@@ -122,7 +135,11 @@ const CreateBookModal = ({ show, onHide }) => {
         <Row className="g-4">
           {/* Search Column */}
           <Col md={6} className="border border-light-subtle rounded p-3">
-            <h5 className="mb-3 fw-bold">Search for Books</h5>
+             <h4 className="mb-3 text-center">
+              <span className='badge bg-primary'>
+                Search for Books
+              </span>
+            </h4>
             <InputGroup className="mb-3">
               <Form.Control
                 placeholder="Search by title or author..."
@@ -135,6 +152,7 @@ const CreateBookModal = ({ show, onHide }) => {
                 className="rounded-pill ms-2"
                 onClick={() => setTriggerSearch(true)}
               >
+                <Search className="me-2" />
                 Search
               </Button>
             </InputGroup>
@@ -164,7 +182,11 @@ const CreateBookModal = ({ show, onHide }) => {
 
           {/* Manual Entry Column */}
           <Col md={6} className="border border-light-subtle rounded p-3">
-            <h5 className="mb-3 fw-bold">Manual Entry</h5>
+             <h4 className="mb-3 text-center">
+              <span className='badge bg-primary'>
+                Book Data
+              </span>
+            </h4>
             <Form>
               <Form.Group className="mb-3">
                 <Form.Label>Title</Form.Label>
@@ -200,9 +222,14 @@ const CreateBookModal = ({ show, onHide }) => {
                 <Form.Label>Description (Optional)</Form.Label>
                 <Form.Control as="textarea" rows={3} name="description" value={manualEntryFormData.description} onChange={handleManualFormChange} className="rounded" />
               </Form.Group>
-              <div className="d-flex justify-content-end">
+              <div className="d-flex justify-content-end gap-2">
                 <Button variant="primary" onClick={handleManualAdd} className="rounded-pill">
-                  + Add Manually
+                  <PlusCircleFill className="me-2" />
+                  Add Book
+                </Button>
+                <Button variant="danger" onClick={handleClearEntry} className="rounded-pill">
+                  <Trash className="me-2" />
+                  Clear Details
                 </Button>
               </div>
             </Form>
@@ -212,7 +239,12 @@ const CreateBookModal = ({ show, onHide }) => {
         <hr className="my-4" />
 
         {/* Books to Create List */}
-        <h5 className="mb-3 fw-bold">Books to Create ({booksToCreate.length})</h5>
+        {/* <h5 className="mb-3 fw-bold">Books to Create ({booksToCreate.length})</h5> */}
+         <h4 className="mb-3 text-center">
+              <span className='badge bg-primary'>
+               Books to Create ({booksToCreate.length})
+              </span>
+            </h4>
         <div className="overflow-auto" style={{ maxHeight: '300px' }}>
           <Row className="g-3">
             {booksToCreate.length === 0 ? (
@@ -247,10 +279,12 @@ const CreateBookModal = ({ show, onHide }) => {
       </Modal.Body>
       <Modal.Footer className="bg-light border-top">
         <Button variant="secondary" onClick={onHide} className="rounded-pill">
+          <XCircle className="me-2"/>
           Cancel
         </Button>
         <Button variant="success" onClick={handleCreateBooks} disabled={booksToCreate.length === 0} className="rounded-pill">
-          Create Books
+          <JournalCheck className="me-2"/>
+            Create Books
         </Button>
       </Modal.Footer>
     </Modal>
