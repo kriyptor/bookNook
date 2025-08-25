@@ -126,7 +126,7 @@ exports.createReadingList = async (req, res) => {
       return res.status(400).json({ success: false, error: "Invalid user ID format" });
     }
     
-    const { title, description, books = [] } = req.body;
+    const { title, description, books } = req.body;
 
     if (!title || !description) {
       await session.abortTransaction();

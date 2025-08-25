@@ -3,16 +3,18 @@ import { Modal, Button, Form, Row, Col, Card, InputGroup, ListGroup, Spinner } f
 import { PlusCircleFill, Trash, JournalCheck, Search, XCircle } from 'react-bootstrap-icons'; 
 import axios from 'axios';
 
-// IMPORTANT: Replace with your actual Google Books API Key
-const GOOGLE_BOOKS_API_KEY = 'AIzaSyAW8tBqKgUGzpQDSfIjaurW3eY45brNBcc';
-const GOOGLE_BOOKS_API_URL = 'https://www.googleapis.com/books/v1/volumes';
+
+const GOOGLE_BOOKS_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
+const GOOGLE_BOOKS_API_URL = import.meta.env.VITE_GOOGLE_API_URL; 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Custom hook to handle API fetching logic using Axios
 const useGoogleBooks = (query, triggerSearch) => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
+  const userToken = localStorage.getItem("token");
+  
   useEffect(() => {
     const source = axios.CancelToken.source();
 
@@ -118,12 +120,21 @@ const CreateBookModal = ({ show, onHide }) => {
     setBooksToCreate(booksToCreate.filter((_, i) => i !== index));
   };
 
-  const handleCreateBooks = () => {
+  const handleCreateBooks = async() => {
     console.log(booksToCreate);
-    // TODO: Implement API call here to send the booksToCreate array
-    onHide();
-    setBooksToCreate([]);
-    setSearchQuery('');
+     
+    try{
+
+      await axios.post(`${BASE_URL}/books`, booksToCreate,
+         { headers: {"Authorization" : userToken } }
+      );
+
+      setBooksToCreate([]);
+      setSearchQuery('');
+    } catch(err){
+      console.log(err);
+    }
+
   };
 
   return (

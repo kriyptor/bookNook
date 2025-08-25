@@ -27,4 +27,13 @@ router.put('/:id/reading', authenticate, bookController.toggleBookStatusToReadin
 // PUT /api/books/:id/favorite - Toggle favorite status
 router.put('/:id/favorite', authenticate, bookController.toggleFavorite);
 
+// GET /api/books/read - Get only read books
+router.get('/read', authenticate, bookController.getReadBooks);
+
+// GET /api/books/reading - Get books with status "Reading"
+router.get('/reading', authenticate, bookController.getReadingBooks);
+
+// GET /api/books/favorites - Get favorite books
+router.get('/favorites', authenticate, bookController.getFavoriteBooks);
+
 module.exports = router;

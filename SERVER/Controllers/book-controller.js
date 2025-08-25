@@ -442,3 +442,123 @@ exports.deleteBook = async (req, res) => {
     });
   }
 };
+
+// 1) Get only read books
+exports.getReadBooks = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 15;
+    const skip = (page - 1) * limit;
+
+    const filter = { userId, status: 'Read' };
+
+    const [books, totalBooks] = await Promise.all([
+      Books.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Books.countDocuments(filter)
+    ]);
+
+    const totalPages = Math.ceil(totalBooks / limit);
+
+    res.status(200).json({
+      success: true,
+      data: books,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems: totalBooks,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching read books',
+      error: error.message
+    });
+  }
+};
+
+// 2) Get books with status "Reading"
+exports.getReadingBooks = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 15;
+    const skip = (page - 1) * limit;
+
+    const filter = { userId, status: 'Reading' };
+
+    const [books, totalBooks] = await Promise.all([
+      Books.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Books.countDocuments(filter)
+    ]);
+
+    const totalPages = Math.ceil(totalBooks / limit);
+
+    res.status(200).json({
+      success: true,
+      data: books,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems: totalBooks,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching reading books',
+      error: error.message
+    });
+  }
+};
+
+// 3) Get favorite books
+exports.getFavoriteBooks = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 15;
+    const skip = (page - 1) * limit;
+
+    const filter = { userId, isFavorite: true };
+
+    const [books, totalBooks] = await Promise.all([
+      Books.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Books.countDocuments(filter)
+    ]);
+
+    const totalPages = Math.ceil(totalBooks / limit);
+
+    res.status(200).json({
+      success: true,
+      data: books,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems: totalBooks,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching favorite books',
+      error: error.message
+    });
+  }
+};

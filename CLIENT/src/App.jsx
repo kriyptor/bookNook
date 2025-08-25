@@ -17,10 +17,10 @@ import axios from 'axios';
 
 const App = () => {
   // State to manage authentication
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const apiEndPoint = `http://13.232.30.37`
+  const apiEndPoint = import.meta.env.API_BASE_URL;
 
 
   useEffect(() => {
@@ -44,7 +44,6 @@ const App = () => {
   // Login handler
   const handleLogin = async (token) => {
     try {
-      await fetchUserPremiumStatus(token);
       setToken(token);
       setIsAuthenticated(true);
       localStorage.setItem('token', token); //change to -> localStorage.setItem('token', response.data.token)

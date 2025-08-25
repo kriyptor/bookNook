@@ -1,98 +1,139 @@
+import { useState, useEffect } from 'react';
+import { Container, Row, Col, Pagination, Spinner, Alert } from 'react-bootstrap';
+import axios from 'axios';
 import BookCard from './BookCard';
 import EditBookModal from './EditBookModal';
-import { useState, useEffect } from 'react';
-import { Container, Row, Col, Pagination } from 'react-bootstrap';
 
-// Mock data for 20 books (added mock summary/details for testing the modal)
-const mockBooks = [
-  { id: 1, title: 'The Lord of the Rings', author: 'J.R.R. Tolkien', status: 'Reading', summary: '', details: '' },
-  { id: 2, title: 'The Hitchhiker\'s Guide to the Galaxy', author: 'Douglas Adams', status: 'To Read', summary: '', details: '' },
-  { id: 3, title: 'Dune', author: 'Frank Herbert', status: 'Read', summary: 'A complex sci-fi epic about politics and religion on a desert planet.', details: 'Learned about the long-term impacts of political decisions on ecology and culture.' },
-  { id: 4, title: '1984', author: 'George Orwell', status: 'Reading', summary: '', details: '' },
-  { id: 5, title: 'Brave New World', author: 'Aldous Huxley', status: 'To Read', summary: '', details: '' },
-  { id: 6, title: 'The Hobbit', author: 'J.R.R. Tolkien', status: 'Read', summary: 'A tale of a hobbit who joins a quest to reclaim a dragon\'s treasure.', details: 'The importance of courage in the face of overwhelming odds.' },
-  { id: 7, title: 'Fahrenheit 451', author: 'Ray Bradbury', status: 'Reading', summary: '', details: '' },
-  { id: 8, title: 'The Catcher in the Rye', author: 'J.D. Salinger', status: 'To Read', summary: '', details: '' },
-  { id: 9, title: 'To Kill a Mockingbird', author: 'Harper Lee', status: 'Read', summary: 'A story about racial injustice and the loss of innocence in the American South.', details: 'Gained a deeper understanding of empathy and moral courage.' },
-  { id: 10, title: 'Pride and Prejudice', author: 'Jane Austen', status: 'Reading', summary: '', details: '' },
-  { id: 11, title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', status: 'To Read', summary: '', details: '' },
-  { id: 12, title: 'Moby Dick', author: 'Herman Melville', status: 'Read', summary: 'The obsessive quest of Captain Ahab for revenge on the giant white whale.', details: 'The dangers of obsession and the struggle between good and evil.' },
-  { id: 13, title: 'War and Peace', author: 'Leo Tolstoy', status: 'Reading', summary: '', details: '' },
-  { id: 14, title: 'The Odyssey', author: 'Homer', status: 'To Read', summary: '', details: '' },
-  { id: 15, title: 'Harry Potter and the Sorcerer\'s Stone', author: 'J.K. Rowling', status: 'Read', summary: 'A young wizard discovers his magical heritage and battles an evil sorcerer.', details: 'The power of friendship and bravery.' },
-  { id: 16, title: 'The Alchemist', author: 'Paulo Coelho', status: 'Reading', summary: '', details: '' },
-  { id: 17, title: 'The Da Vinci Code', author: 'Dan Brown', status: 'To Read', summary: '', details: '' },
-  { id: 18, title: 'The Silent Patient', author: 'Alex Michaelides', status: 'Read', summary: 'A psychotherapist tries to unravel the mystery of a famous painter who killed her husband.', details: 'The complex nature of trauma and the secrets people keep.' },
-  { id: 19, title: 'Educated', author: 'Tara Westover', status: 'Reading', summary: '', details: '' },
-  { id: 20, title: 'Becoming', author: 'Michelle Obama', status: 'To Read', summary: '', details: '' },
-];
-
-
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const Bookpage = () => {
-  // State for pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const booksPerPage = 6;
-  const totalPages = Math.ceil(mockBooks.length / booksPerPage);
-
-  // State for the modal
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    hasNextPage: false,
+    hasPrevPage: false
+  });
 
-  const indexOfLastBook = currentPage * booksPerPage;
-  const indexOfFirstBook = indexOfLastBook - booksPerPage;
-  const currentBooks = mockBooks.slice(indexOfFirstBook, indexOfLastBook);
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const userToken = localStorage.getItem('token');
+
+        if (!userToken) {
+          throw new Error('No authentication token found. Please sign in.');
+        }
+
+        const response = await axios.get(`${BASE_URL}/books?page=${pagination.currentPage}`, {
+          headers: {
+            'Authorization': userToken
+          }
+        });
+
+        if (response.data.success) {
+          setBooks(response.data.data);
+          setPagination(response.data.pagination);
+        } else {
+          setError(response.data.message || 'Failed to fetch books.');
+        }
+      } catch (err) {
+        console.error('Error fetching books:', err);
+        setError(err.message || 'Failed to fetch books. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, [pagination.currentPage]);
 
   const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
+    setPagination(prev => ({ ...prev, currentPage: pageNumber }));
   };
-  
-  // Function to handle the "Edit Details" button click
+
   const handleEditClick = (book) => {
     setSelectedBook(book);
     setShowEditModal(true);
   };
 
+  if (loading) {
+    return (
+      <Container className="my-5 text-center">
+        <Spinner animation="border" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </Spinner>
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container className="my-5">
+        <Alert variant="danger" className="rounded-pill">{error}</Alert>
+      </Container>
+    );
+  }
+
+  if (books.length === 0) {
+    return (
+      <Container className="my-5 text-center">
+        <Alert variant="info" className="rounded-pill">
+          You don't have any books yet. Add some to get started!
+        </Alert>
+      </Container>
+    );
+  }
+
   return (
     <Container className="my-5">
       <h2 className="mb-4 text-center">Your Books</h2>
       
-      {/* Book Cards Grid */}
       <Row xs={1} sm={2} lg={3} className="g-4">
-        {currentBooks.map((book) => (
-          <Col key={book.id}>
+        {books.map((book) => (
+          <Col key={book._id}>
             <BookCard
               title={book.title}
               author={book.author}
               status={book.status}
               imageUrl={book.imageUrl}
               onEdit={() => handleEditClick(book)}
-              onDelete={() => console.log(book.id)}
+              onDelete={() => console.log(book._id)}
             />
           </Col>
         ))}
       </Row>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
+      {pagination.totalPages > 1 && (
         <div className="d-flex justify-content-center mt-5">
           <Pagination>
-            <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
-            {[...Array(totalPages).keys()].map((pageNumber) => (
+            <Pagination.Prev 
+              onClick={() => handlePageChange(pagination.currentPage - 1)} 
+              disabled={!pagination.hasPrevPage} 
+            />
+            {[...Array(pagination.totalPages).keys()].map((pageNumber) => (
               <Pagination.Item
                 key={pageNumber + 1}
-                active={pageNumber + 1 === currentPage}
+                active={pageNumber + 1 === pagination.currentPage}
                 onClick={() => handlePageChange(pageNumber + 1)}
               >
                 {pageNumber + 1}
               </Pagination.Item>
             ))}
-            <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
+            <Pagination.Next 
+              onClick={() => handlePageChange(pagination.currentPage + 1)} 
+              disabled={!pagination.hasNextPage} 
+            />
           </Pagination>
         </div>
       )}
 
-      {/* The new modal component */}
       <EditBookModal
         show={showEditModal}
         onHide={() => setShowEditModal(false)}

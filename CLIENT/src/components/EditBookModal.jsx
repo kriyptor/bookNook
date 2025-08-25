@@ -40,7 +40,7 @@ const EditBookModal = ({ show, onHide, book }) => {
   };
 
   return (
-    <Modal show={show} onHide={onHide}>
+    <Modal show={show} onHide={onHide} centered>
       <Modal.Header closeButton>
         <Modal.Title>Edit Book Details</Modal.Title>
       </Modal.Header>

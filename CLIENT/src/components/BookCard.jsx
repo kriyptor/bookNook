@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Button } from 'react-bootstrap';
-
+import { PencilSquare } from 'react-bootstrap-icons';
 
 const getStatusColor = (status) => {
   switch (status) {
@@ -16,44 +16,53 @@ const getStatusColor = (status) => {
 };
 
 const BookCard = ({ title, author, status, imageUrl = 'https://dhmckee.com/wp-content/uploads/2018/11/defbookcover-min.jpg', onEdit, onDelete }) => {
-    return (
-    <Card className="h-100 shadow-sm">
-              <div className="d-flex p-3">
-                <div className="flex-shrink-0 me-3">
-                  <Card.Img 
-                    style={{ width: '100px', height: '150px', objectFit: 'cover' }} 
-                    src={imageUrl} 
-                    alt="Book Cover"
-                    className="rounded shadow-sm"
-                  />
-                </div>
-                <div className="flex-grow-1">
-                  <Card.Body className="p-0">
-                    <Card.Title className="fs-5">{title}</Card.Title>
-                    <Card.Subtitle className="text-muted">{author}</Card.Subtitle>
-                    <div className="mt-3">
-                      <span className={`badge bg-${getStatusColor(status)}`}>
-                        {status}
-                      </span>
-                    </div>
-                  </Card.Body>
-                </div>
-              </div>
-              <Card.Footer className="d-flex justify-content-between">
-                <Button 
-                  variant="outline-primary" 
-                  onClick={onEdit} // Attach the handler here
-                >
-                  Edit Details
-                </Button>
-                <Button 
-                  variant="danger" 
-                  onClick={onDelete} // Attach the handler here
-                >
-                  Delete
-                </Button>
-              </Card.Footer>
-            </Card> 
+  return (
+    <Card className="h-100 shadow-sm position-relative">
+      <Button
+        variant="warning"
+        size="sm"
+        className="position-absolute top-0 end-0 m-2 rounded"
+        onClick={onEdit}
+        title="Edit Book"
+      >
+        <PencilSquare size={16} />
+      </Button>
+      <div className="d-flex p-3">
+        <div className="flex-shrink-0 me-3">
+          <Card.Img 
+            style={{ width: '100px', height: '150px', objectFit: 'cover' }} 
+            src={imageUrl} 
+            alt="Book Cover"
+            className="rounded shadow-sm"
+          />
+        </div>
+        <div className="flex-grow-1">
+          <Card.Body className="p-0 pt-3">
+            <Card.Title className="fs-5 mb-2" style={{ paddingRight: '40px' }}>{title}</Card.Title>
+            <Card.Subtitle className="text-muted mb-2">{author}</Card.Subtitle>
+            <div className="mt-3">
+              <span className={`badge bg-${getStatusColor(status)}`}>
+                {status}
+              </span>
+            </div>
+          </Card.Body>
+        </div>
+      </div>
+      <Card.Footer className="d-flex justify-content-between">
+        <Button 
+          variant="primary" 
+          onClick={onEdit}
+        >
+          Update Status
+        </Button>
+        <Button 
+          variant="outline-danger" 
+          onClick={onDelete}
+        >
+          Delete
+        </Button>
+      </Card.Footer>
+    </Card> 
   );
 };
 

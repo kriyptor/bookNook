@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Form, Button, Alert, Tabs, Tab, InputGroup } from 'react-bootstrap';
 import { Eye, EyeSlash } from 'react-bootstrap-icons';
 
 const AuthComponent = ({ handleLogin }) => {
-  const apiEndPoint = 'http://13.232.30.37';
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
 
   // State for different forms
@@ -58,14 +58,14 @@ const AuthComponent = ({ handleLogin }) => {
     }
 
     try {
-      const response = await axios.post(`${apiEndPoint}/user/sign-in`, {
+      const response = await axios.post(`${BASE_URL}/auth/login`, {
         email: signInEmail,
         password: signInPassword
       });
 
-      localStorage.setItem('token', response.data.token);
+      handleLogin(response.data.token);
       setSuccess('Sign in successful!');
-      navigate('/home');
+      navigate('/AllReadinglist');
     } catch (err) {
       setError('Sign in failed. Please check your credentials.');
     }
@@ -87,18 +87,20 @@ const AuthComponent = ({ handleLogin }) => {
       return;
     }
 
-    if (!validatePassword(signUpPassword)) {
+   /*  if (!validatePassword(signUpPassword)) {
       setError('Password must be 8+ characters, include uppercase, lowercase, and number');
       return;
-    }
+    } */
 
     if (signUpPassword !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
+    console.log(BASE_URL)
+
     try {
-      const response = await axios.post(`${apiEndPoint}/user/sign-up`, {
+      const response = await axios.post(`${BASE_URL}/auth/register`, {
         name: signUpName,
         email: signUpEmail,
         password: signUpPassword

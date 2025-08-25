@@ -2,15 +2,21 @@ import React, { useState } from 'react';
 import { Modal, Button, Form, Row, Col, Card, InputGroup, ListGroup, Spinner } from 'react-bootstrap';
 import axios from 'axios';
 
-// IMPORTANT: Replace with your actual Google Books API Key
-const GOOGLE_BOOKS_API_KEY = 'AIzaSyAW8tBqKgUGzpQDSfIjaurW3eY45brNBcc';
-const GOOGLE_BOOKS_API_URL = 'https://www.googleapis.com/books/v1/volumes';
+const GOOGLE_BOOKS_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
+const GOOGLE_BOOKS_API_URL = import.meta.env.VITE_GOOGLE_API_URL; 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Custom hook to handle API fetching logic using Axios
 const useGoogleBooks = (query, triggerSearch) => {
   const [books, setBooks] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
+  const [userToken, setUserToken] = useState("");
+
+  React.useEffect(() => {
+    setUserToken(localStorage.getItem("token"));
+  }, []);
+
 
   React.useEffect(() => {
     const source = axios.CancelToken.source();
@@ -129,17 +135,29 @@ const CreateReadingList = ({ show, onHide }) => {
     setBooks(books.filter((_, i) => i !== index));
   };
 
-  const handleCreateReadingList = () => {
-    const finalData = {
+  const handleCreateReadingList = async () => {
+    try{
+      const finalData = {
       ...readingListFormData,
       books: books,
     };
     console.log('Final Reading List Data:', finalData);
+    
+      const userToken = localStorage.getItem("token")
+
+     await axios.post(`${BASE_URL}/reading-lists`, finalData,
+         { headers: {"Authorization" : userToken } }
+      );
+
     onHide();
     setStep(1);
     setReadingListFormData({ title: '', description: '' });
     setBooks([]);
     setSearchQuery('');
+
+    }catch(err){
+      console.log(err)
+    }
   };
 
   // Step 1: Reading List Details Form

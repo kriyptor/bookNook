@@ -8,13 +8,13 @@ function ReadingListCard({ title, status, color, totalBooks, onView, onDelete })
         <Card.Subtitle className="mb-2 text-muted">
           {totalBooks} book(s)
         </Card.Subtitle>
-        <div className="mt-3">
+        {/* <div className="mt-3">
           <span className={`badge bg-${color}`}>{status}</span>
-        </div>
+        </div> */}
       </Card.Body>
       <Card.Footer className="d-flex justify-content-between">
-        <Button variant="danger" onClick={onDelete}>Delete List</Button>
-        <Button variant="outline-primary" onClick={onView}>View List</Button>
+        <Button variant="primary" onClick={onView}>View List</Button>
+        <Button variant="outline-danger" onClick={onDelete}>Delete List</Button>
       </Card.Footer>
     </Card>
   );

@@ -1,25 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Spinner, Alert, Button, Modal, Form } from 'react-bootstrap';
-// The following package is not a part of react-bootstrap core and needs to be installed.
-// import { ArrowLeft } from 'react-bootstrap-icons';
+import axios from 'axios';
 import BookCard from '../BookCard';
-import EditBookModal from '../EditBookModal'
+import EditBookModal from '../EditBookModal';
 import DeleteBookModal from './DeleteBookModal';
 
-// A simple BookCard component is now defined in this file to make it a self-contained artifact.
-const mockReadingList = {
-  id: "1",
-  title: "My Favorites",
-  description: "All-time favorite books I would recommend to anyone.",
-  books: [
-    { id: 1, title: 'The Lord of the Rings', author: 'J.R.R. Tolkien', status: 'Read' },
-    { id: 4, title: '1984', author: 'George Orwell', status: 'Reading' },
-    { id: 7, title: 'Fahrenheit 451', author: 'Ray Bradbury', status: 'Read' },
-    { id: 9, title: 'To Kill a Mockingbird', author: 'Harper Lee', status: 'Read' },
-    { id: 16, title: 'The Alchemist', author: 'Paulo Coelho', status: 'Read' },
-  ],
-};
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const SingleReadingListPage = () => {
   const { listId } = useParams();
@@ -58,15 +45,22 @@ const SingleReadingListPage = () => {
       try {
         setLoading(true);
         setError(null);
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const userToken = localStorage.getItem('token');
         
-        if (listId === mockReadingList.id) {
-          setReadingList(mockReadingList);
+        const response = await axios.get(`${BASE_URL}/reading-lists/list/${listId}`, {
+          headers: {
+            'Authorization': userToken
+          }
+        });
+
+        if (response.data.success) {
+          setReadingList(response.data.data);
         } else {
-          setError(`Reading list with ID ${listId} not found.`);
+          setError(response.data.message || 'Failed to fetch reading list details.');
         }
       } catch (err) {
-        setError("Failed to fetch reading list details.");
+        console.error('Error fetching reading list:', err);
+        setError('Failed to fetch reading list details. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -103,9 +97,8 @@ const SingleReadingListPage = () => {
   return (
     <Container className="my-5">
       <div className="d-flex align-items-center mb-4">
-        {/* The Back Button */}
-        <Button variant="outline-secondary" onClick={() => navigate(-1)} className="me-3">
-          &#8592; Back
+        <Button variant="outline-secondary" onClick={() => navigate(-1)} className="me-3 rounded-pill">
+          Back
         </Button>
         <div>
           <h2 className="mb-0">{readingList.title}</h2>
@@ -114,21 +107,27 @@ const SingleReadingListPage = () => {
       </div>
       <hr />
       
-      <h4 className="mb-4">Books in this List</h4>
-      <Row xs={1} sm={2} lg={3} className="g-4">
-        {readingList.books.map((book) => (
-          <Col key={book.id}>
-            <BookCard
+      <h4 className="mb-4">Books in this List ({readingList.books.length})</h4>
+      {readingList.books.length === 0 ? (
+        <Alert variant="info" className="rounded-pill">
+          No books in this reading list yet.
+        </Alert>
+      ) : (
+        <Row xs={1} sm={2} lg={3} className="g-4">
+          {readingList.books.map((book) => (
+            <Col key={book._id}>
+              <BookCard
                 title={book.title}
                 author={book.author}
                 status={book.status}
+                imageUrl={book.imageUrl}
                 onEdit={() => handleEditClick(book)}
                 onDelete={() => handleDeleteClick(book)}
-                // Add other props as needed
-            />
-          </Col>
-        ))}
-      </Row>
+              />
+            </Col>
+          ))}
+        </Row>
+      )}
       <EditBookModal
         show={showEditModal}
         onHide={() => setShowEditModal(false)}
@@ -137,7 +136,7 @@ const SingleReadingListPage = () => {
       <DeleteBookModal
         show={showDeleteModal}
         onHide={() => setShowDeleteModal(false)}
-        bookId={bookToDelete?.id}
+        bookId={bookToDelete?._id}
         onConfirmDelete={handleConfirmDelete}
       />
     </Container>
