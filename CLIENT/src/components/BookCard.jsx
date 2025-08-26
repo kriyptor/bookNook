@@ -15,15 +15,24 @@ const getStatusColor = (status) => {
   }
 };
 
-const BookCard = ({ title, author, status, imageUrl = 'https://dhmckee.com/wp-content/uploads/2018/11/defbookcover-min.jpg', onEdit, onDelete }) => {
+const BookCard = ({ title, author, status, imageUrl = 'https://dhmckee.com/wp-content/uploads/2018/11/defbookcover-min.jpg', onEditDetails, onUpdateStatus, onDelete }) => {
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Reading': return 'primary';
+      case 'Read': return 'success';
+      case 'To Read': return 'secondary';
+      default: return 'light';
+    }
+  };
+
   return (
     <Card className="h-100 shadow-sm position-relative">
       <Button
         variant="warning"
         size="sm"
         className="position-absolute top-0 end-0 m-2 rounded"
-        onClick={onEdit}
-        title="Edit Book"
+        onClick={onEditDetails}
+        title="Edit Book Details"
       >
         <PencilSquare size={16} />
       </Button>
@@ -51,7 +60,7 @@ const BookCard = ({ title, author, status, imageUrl = 'https://dhmckee.com/wp-co
       <Card.Footer className="d-flex justify-content-between">
         <Button 
           variant="primary" 
-          onClick={onEdit}
+          onClick={onUpdateStatus}
         >
           Update Status
         </Button>

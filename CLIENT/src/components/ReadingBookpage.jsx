@@ -1,18 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Container, Row, Col, Pagination, Spinner, Alert } from 'react-bootstrap';
-import axios from 'axios';
 import BookCard from './BookCard';
 import EditBookModal from './EditBookModal';
-import EditBookDetailsModal from './EditBookDetailsModal'; // New Import
+import axios from 'axios';
+
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-const Bookpage = () => {
+const ReadingBookpage = () => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showEditStatusModal, setShowEditStatusModal] = useState(false);
-  const [showEditDetailsModal, setShowEditDetailsModal] = useState(false); // New state for modal
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateError, setUpdateError] = useState(null);
@@ -37,7 +36,7 @@ const Bookpage = () => {
           throw new Error('No authentication token found. Please sign in.');
         }
 
-        const response = await axios.get(`${BASE_URL}/books?page=${pagination.currentPage}`, {
+        const response = await axios.get(`${BASE_URL}/books/reading?page=${pagination.currentPage}`, {
           headers: {
             'Authorization': userToken
           }
@@ -64,64 +63,48 @@ const Bookpage = () => {
     setPagination(prev => ({ ...prev, currentPage: pageNumber }));
   };
 
-  const handleEditDetailsClick = (book) => {
+  const handleEditClick = (book) => {
     setSelectedBook(book);
-    setShowEditDetailsModal(true); // Open the new modal
+    setShowEditModal(true);
   };
 
-  const handleUpdateStatusClick = (book) => {
-    setSelectedBook(book);
-    setShowEditStatusModal(true); // Open the status modal
-  };
-
-  const handleUpdateBookData = async (bookId, updatedData) => {
+  const handleUpdateBook = async (bookId, updatedData) => {
     setUpdateLoading(true);
     setUpdateError(null);
+
     try {
       const userToken = localStorage.getItem('token');
-      if (!userToken) throw new Error('No authentication token found. Please sign in.');
-
-      const response = await axios.put(`${BASE_URL}/books/${bookId}`, updatedData, {
-        headers: { 'Authorization': userToken }
-      });
-      const updatedBookData = response.data.data;
-
-      setBooks(prevBooks => 
-        prevBooks.map(book => book._id === bookId ? updatedBookData : book)
-      );
-      setShowEditDetailsModal(false);
-    } catch (err) {
-      console.error('Error updating book data:', err);
-      setUpdateError(err.response?.data?.message || 'Failed to update book data.');
-    } finally {
-      setUpdateLoading(false);
-    }
-  };
-
-  const handleUpdateBookStatus = async (bookId, updatedData) => {
-    setUpdateLoading(true);
-    setUpdateError(null);
-    try {
-      const userToken = localStorage.getItem('token');
-      if (!userToken) throw new Error('No authentication token found. Please sign in.');
+      if (!userToken) {
+        throw new Error('No authentication token found. Please sign in.');
+      }
 
       const endpoint = updatedData.status === 'Reading' 
         ? `${BASE_URL}/books/${bookId}/reading`
-        : `${BASE_URL}/books/${bookId}/status`;
+        : `${BASE_URL}/books/${bookId}/status`; // Correct endpoint for 'Read' status update
 
       const payload = updatedData.status === 'Read' 
-        ? { summary: updatedData.summary, details: updatedData.details, review: updatedData.rating }
+        ? { 
+            summary: updatedData.summary, 
+            details: updatedData.details, 
+            review: updatedData.rating // Correct field name to match backend
+          }
         : { status: updatedData.status };
 
       const response = await axios.put(endpoint, payload, {
         headers: { 'Authorization': userToken }
       });
+      
       const updatedBookData = response.data.data;
 
       setBooks(prevBooks => 
-        prevBooks.map(book => book._id === bookId ? updatedBookData : book)
+        prevBooks.map(book => 
+          book._id === bookId 
+            ? updatedBookData
+            : book
+        )
       );
-      setShowEditStatusModal(false);
+
+      setShowEditModal(false);
     } catch (err) {
       console.error('Error updating book:', err);
       setUpdateError(err.response?.data?.message || 'Failed to update book. Please try again.');
@@ -133,15 +116,20 @@ const Bookpage = () => {
   const handleDeleteBook = async (bookId) => {
     setDeleteLoading(true);
     setDeleteError(null);
+
     try {
       const userToken = localStorage.getItem('token');
-      if (!userToken) throw new Error('No authentication token found. Please sign in.');
+      if (!userToken) {
+        throw new Error('No authentication token found. Please sign in.');
+      }
 
       await axios.delete(`${BASE_URL}/books/${bookId}`, {
         headers: { 'Authorization': userToken }
       });
 
+      // Update the client-side state to remove the deleted book
       setBooks(prevBooks => prevBooks.filter(book => book._id !== bookId));
+      
     } catch (err) {
       console.error('Error deleting book:', err);
       setDeleteError(err.response?.data?.message || 'Failed to delete book. Please try again.');
@@ -201,9 +189,9 @@ const Bookpage = () => {
               author={book.author}
               status={book.status}
               imageUrl={book.imageUrl}
-              onEditDetails={() => handleEditDetailsClick(book)}
-              onUpdateStatus={() => handleUpdateStatusClick(book)}
+              onEdit={() => handleEditClick(book)}
               onDelete={() => handleDeleteBook(book._id)}
+              deleteLoading={deleteLoading}
             />
           </Col>
         ))}
@@ -233,22 +221,11 @@ const Bookpage = () => {
         </div>
       )}
 
-      {/* Modal for updating status/learnings */}
       <EditBookModal
-        show={showEditStatusModal}
-        onHide={() => setShowEditStatusModal(false)}
+        show={showEditModal}
+        onHide={() => setShowEditModal(false)}
         book={selectedBook}
-        onUpdate={handleUpdateBookStatus}
-        updateLoading={updateLoading}
-        updateError={updateError}
-      />
-      
-      {/* Modal for updating book details */}
-      <EditBookDetailsModal
-        show={showEditDetailsModal}
-        onHide={() => setShowEditDetailsModal(false)}
-        book={selectedBook}
-        onUpdate={handleUpdateBookData}
+        onUpdate={handleUpdateBook}
         updateLoading={updateLoading}
         updateError={updateError}
       />
@@ -256,4 +233,4 @@ const Bookpage = () => {
   );
 };
 
-export default Bookpage;
+export default ReadingBookpage;

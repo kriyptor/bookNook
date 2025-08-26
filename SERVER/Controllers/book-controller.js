@@ -258,10 +258,10 @@ exports.updateBookStatusToReadAndLearnings = async (req, res) => {
     }
 
     const updateData = {
-        'review.summary': summary,
-        'review.details': details,
+        'learnings.summary': summary,
+        'learnings.details': details,
         status: 'Read',
-        rating: rating,
+        review: rating,
         finishedOn: new Date() // Add the finishedOn date
     };
 

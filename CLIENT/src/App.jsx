@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Spinner from 'react-bootstrap/Spinner';
 import Auth from "./components/Auth";
@@ -10,8 +10,8 @@ import Profilepage from "./components/Profilepage";
 import Dashboard from "./components/Dashboard";
 import BookNookNavbar from "./components/BookNookNavbar";
 import Bookpage from "./components/Bookpage";
-import ReadBooks from "./components/ReadBooks";
-import ReadingBooks from "./components/ReadingBooks"
+import ReadBookpage from "./components/ReadBookpage";
+import ReadingBookpage from "./components/ReadingBookpage"
 import SingleReadingListPage from "./components/readinglist/SingleReadingListPage";
 import axios from 'axios'; 
 
@@ -46,7 +46,7 @@ const App = () => {
     try {
       setToken(token);
       setIsAuthenticated(true);
-      localStorage.setItem('token', token); //change to -> localStorage.setItem('token', response.data.token)
+      localStorage.setItem('token', token); 
     } catch (error) {
       console.error("Login error:", error);
       // Add proper error handling here
@@ -61,7 +61,7 @@ const App = () => {
   };
 
   if (isLoading) {
-    return <Spinner animation="border" /> // Or a proper loading component
+    return <Spinner animation="border" /> 
   }
 
   return (
@@ -143,7 +143,7 @@ const App = () => {
         <Route 
           path="/AllReadBooks" 
           element={
-            isAuthenticated ? <ReadBooks token={token} /> : <Navigate to="/" />
+            isAuthenticated ? <ReadBookpage token={token} /> : <Navigate to="/" />
           } 
         />
 
@@ -151,7 +151,7 @@ const App = () => {
         <Route 
           path="/AllReadingBooks" 
           element={
-            isAuthenticated ? <ReadingBooks token={token} /> : <Navigate to="/" />
+            isAuthenticated ? <ReadingBookpage token={token} /> : <Navigate to="/" />
           } 
         />
 

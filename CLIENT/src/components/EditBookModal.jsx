@@ -1,30 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, FormControl, FormLabel } from 'react-bootstrap';
+import { Modal, Button, Form, FormControl, FormLabel, Alert, Spinner } from 'react-bootstrap';
 
-const EditBookModal = ({ show, onHide, book }) => {
-  // Use state to manage form data, initialized with the book prop
+const EditBookModal = ({ show, onHide, book, onUpdate, updateLoading, updateError }) => {
   const [formData, setFormData] = useState({
     title: '',
     author: '',
     status: '',
     summary: '',
-    details: ''
+    details: '',
+    rating: ''
   });
 
-  // Effect to update form data when a new book is selected
   useEffect(() => {
     if (book) {
       setFormData({
-        title: book.title,
-        author: book.author,
-        status: book.status,
-        summary: book.summary || '', // Use empty string for safety
-        details: book.details || ''
+        title: book.title || '',
+        author: book.author || '',
+        status: book.status || 'To Read',
+        summary: book.learnings?.summary || '',
+        details: book.learnings?.details || '',
+        rating: book.review || ''
       });
     }
   }, [book]);
 
-  // Handle form field changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevData => ({
@@ -33,18 +32,30 @@ const EditBookModal = ({ show, onHide, book }) => {
     }));
   };
 
-  // Handle saving the form (mock function)
   const handleSave = () => {
-    console.log("Saving changes:", formData);
-    onHide(); // Close the modal
+    if (!book?._id) {
+      return;
+    }
+    
+    const payload = {
+        status: formData.status,
+        ...((formData.status === 'Read') && {
+            summary: formData.summary,
+            details: formData.details,
+            rating: formData.rating
+        })
+    };
+    
+    onUpdate(book._id, payload);
   };
 
   return (
     <Modal show={show} onHide={onHide} centered>
-      <Modal.Header closeButton>
+      <Modal.Header closeButton className="bg-light">
         <Modal.Title>Edit Book Details</Modal.Title>
       </Modal.Header>
-      <Modal.Body>
+      <Modal.Body className="p-4">
+        {updateError && <Alert variant="danger" className="rounded-pill">{updateError}</Alert>}
         <Form>
           <Form.Group className="mb-3">
             <FormLabel>Book Title</FormLabel>
@@ -53,6 +64,8 @@ const EditBookModal = ({ show, onHide, book }) => {
               name="title" 
               value={formData.title} 
               onChange={handleChange} 
+              disabled
+              className="rounded"
             />
           </Form.Group>
 
@@ -63,6 +76,8 @@ const EditBookModal = ({ show, onHide, book }) => {
               name="author" 
               value={formData.author} 
               onChange={handleChange} 
+              disabled
+              className="rounded"
             />
           </Form.Group>
 
@@ -72,18 +87,29 @@ const EditBookModal = ({ show, onHide, book }) => {
               name="status" 
               value={formData.status} 
               onChange={handleChange}
+              className="rounded"
+              disabled={book?.status === 'Read'}
             >
-              <option value="To Read">To Read</option>
-              <option value="Reading">Reading</option>
-              <option value="Read">Read</option>
+              {book?.status === 'Reading' ? (
+                <>
+                  <option value="Reading">Reading</option>
+                  <option value="Read">Read</option>
+                </>
+              ) : (
+                <>
+                  <option value="To Read">To Read</option>
+                  <option value="Reading">Reading</option>
+                </>
+              )}
             </Form.Select>
           </Form.Group>
 
-          {/* Conditional rendering for 'Read' status */}
           {formData.status === 'Read' && (
             <>
               <hr />
-              <p className="text-muted">Enter your learnings below:</p>
+              <p className="text-muted mb-3">
+                {book?.status === 'Read' ? 'Update your learnings and rating:' : 'Add your learnings and rating:'}
+              </p>
               <Form.Group className="mb-3">
                 <FormLabel>Book Summary</FormLabel>
                 <FormControl 
@@ -92,28 +118,61 @@ const EditBookModal = ({ show, onHide, book }) => {
                   name="summary" 
                   value={formData.summary} 
                   onChange={handleChange} 
+                  className="rounded"
                 />
               </Form.Group>
               <Form.Group className="mb-3">
-                <FormLabel>Learnings from the book</FormLabel>
+                <FormLabel>Learnings from the Book</FormLabel>
                 <FormControl 
                   as="textarea" 
                   rows={3} 
                   name="details" 
                   value={formData.details} 
                   onChange={handleChange} 
+                  className="rounded"
                 />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <FormLabel>Rating</FormLabel>
+                <Form.Select 
+                  name="rating" 
+                  value={formData.rating} 
+                  onChange={handleChange}
+                  className="rounded"
+                >
+                  <option value="">Select a rating</option>
+                  <option value="Transformative">Transformative</option>
+                  <option value="Worthwhile">Worthwhile</option>
+                  <option value="Uninspiring">Uninspiring</option>
+                </Form.Select>
               </Form.Group>
             </>
           )}
         </Form>
       </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={onHide}>
+      <Modal.Footer className="bg-light">
+        <Button 
+          variant="secondary" 
+          onClick={onHide} 
+          disabled={updateLoading}
+          className="rounded-pill px-4"
+        >
           Close
         </Button>
-        <Button variant="primary" onClick={handleSave}>
-          Save Changes
+        <Button 
+          variant="primary" 
+          onClick={handleSave} 
+          disabled={updateLoading}
+          className="rounded-pill px-4"
+        >
+          {updateLoading ? (
+            <>
+              <Spinner size="sm" animation="border" className="me-2" />
+              Saving...
+            </>
+          ) : (
+            'Save Changes'
+          )}
         </Button>
       </Modal.Footer>
     </Modal>

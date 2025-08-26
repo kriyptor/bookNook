@@ -19,7 +19,7 @@ router.put('/:id', authenticate, bookController.updateBookData);
 router.delete('/:id', authenticate, bookController.deleteBook);
 
 // PUT /api/books/:id/status - Update book reading status
-router.put('/:id/status', authenticate, bookController.updateBookStatusToReadAndLearnings);
+router.put('/:id/read', authenticate, bookController.updateBookStatusToReadAndLearnings);
 
 // PUT /api/books/:id/reading - Toggle reading status
 router.put('/:id/reading', authenticate, bookController.toggleBookStatusToReading);
