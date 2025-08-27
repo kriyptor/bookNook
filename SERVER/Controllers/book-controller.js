@@ -242,54 +242,84 @@ exports.updateBookData = async (req, res) => {
 };
 
 
+
 exports.updateBookStatusToReadAndLearnings = async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
+    session.startTransaction();
+
     const userId = req.user._id;
-    const { id } = req.params; // Use 'id' for consistency
-    const { summary, details, rating } = req.body; // Use 'rating' to match schema
-    
+    const { id } = req.params;
+    const { summary, details, rating } = req.body;
+
     if (!mongoose.isValidObjectId(id)) {
       return res.status(400).json({ success: false, error: "Invalid book ID format" });
     }
 
-    // Combine validation into a single, clean check
     if (!summary || !details || !rating) {
-        return res.status(400).json({ success: false, error: "All fields (summary, details, rating) are required." });
+      return res.status(400).json({ success: false, error: "All fields are required." });
     }
 
-    const updateData = {
+    // Update the Book document
+    const updatedBook = await Books.findOneAndUpdate(
+      { _id: id, userId: userId },
+      {
         'learnings.summary': summary,
         'learnings.details': details,
         status: 'Read',
         review: rating,
-        finishedOn: new Date() // Add the finishedOn date
-    };
-
-    const updatedBook = await Books.findOneAndUpdate(
-      { _id: id, userId: userId }, // Atomic query with ownership check
-      updateData,
-      { new: true, runValidators: true }
+        finishedOn: new Date()
+      },
+      { new: true, runValidators: true, session }
     );
     
     if (!updatedBook) {
+      await session.abortTransaction();
       return res.status(404).json({
         success: false,
         message: 'Book not found or does not belong to the user.'
       });
     }
 
+    // Find all reading lists containing this book
+    const affectedLists = await ReadingList.find({
+      userId: userId,
+      'books.book': id
+    }).session(session);
+
+    // Update isRead status in reading lists
+    await ReadingList.updateMany(
+      { userId: userId, 'books.book': id },
+      { $set: { 'books.$.isRead': true } },
+      { session }
+    );
+
+    // Update progress for each affected reading list
+    for (const readingList of affectedLists) {
+      // Refresh the reading list to get updated books array
+      const updatedList = await ReadingList.findById(readingList._id).session(session);
+      await updatedList.calculateAndSaveProgress({ session });
+    }
+
+    await session.commitTransaction();
+
     res.status(200).json({
       success: true,
-      message: 'Book updated successfully',
+      message: 'Book updated successfully and reading lists synced',
       data: updatedBook
     });
 
   } catch (error) {
+    await session.abortTransaction();
+    
     res.status(500).json({
       success: false,
-      message: 'Error updating book',
+      message: 'An error occurred, all changes have been rolled back.',
       error: error.message
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -398,7 +428,7 @@ exports.deleteBook = async (req, res) => {
 
   try {
     const userId = req.user._id;
-    const { id } = req.params; // Use 'id' for consistency with route params
+    const { id } = req.params;
 
     if (!mongoose.isValidObjectId(id)) {
         return res.status(400).json({ success: false, error: "Invalid book ID format" });
@@ -416,13 +446,25 @@ exports.deleteBook = async (req, res) => {
       });
     }
 
-    // 2. Remove the book's ID from all reading lists that contain it.
+    // 2. Remove the book from all reading lists that contain it and get affected lists
+    const affectedLists = await ReadingList.find({
+      books: { $elemMatch: { book: id } }
+    }).session(session);
+
+    // Remove book from reading lists
     await ReadingList.updateMany(
-      { books: id },
-      { $pull: { books: id } }
+      { "books.book": id },
+      { $pull: { books: { book: id } } }
     ).session(session);
 
-    // 3. Commit the transaction if all operations were successful
+    // 3. Update progress for all affected reading lists
+    for (const readingList of affectedLists) {
+      // Refresh the reading list to get updated books array
+      const updatedList = await ReadingList.findById(readingList._id).session(session);
+      await updatedList.calculateAndSaveProgress({ session });
+    }
+
+    // 4. Commit the transaction if all operations were successful
     await session.commitTransaction();
     session.endSession();
 

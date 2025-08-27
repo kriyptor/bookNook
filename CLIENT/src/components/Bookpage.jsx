@@ -107,10 +107,10 @@ const Bookpage = () => {
 
       const endpoint = updatedData.status === 'Reading' 
         ? `${BASE_URL}/books/${bookId}/reading`
-        : `${BASE_URL}/books/${bookId}/status`;
+        : `${BASE_URL}/books/${bookId}/read`;
 
       const payload = updatedData.status === 'Read' 
-        ? { summary: updatedData.summary, details: updatedData.details, review: updatedData.rating }
+        ? { summary: updatedData.summary, details: updatedData.details, rating: updatedData.rating }
         : { status: updatedData.status };
 
       const response = await axios.put(endpoint, payload, {

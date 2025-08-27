@@ -1,19 +1,5 @@
-import React from 'react';
 import { Card, Button } from 'react-bootstrap';
 import { PencilSquare } from 'react-bootstrap-icons';
-
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'Reading':
-      return 'primary';
-    case 'Read':
-      return 'success';
-    case 'To Read':
-      return 'secondary';
-    default:
-      return 'light';
-  }
-};
 
 const BookCard = ({ title, author, status, imageUrl = 'https://dhmckee.com/wp-content/uploads/2018/11/defbookcover-min.jpg', onEditDetails, onUpdateStatus, onDelete }) => {
   const getStatusColor = (status) => {
@@ -26,7 +12,7 @@ const BookCard = ({ title, author, status, imageUrl = 'https://dhmckee.com/wp-co
   };
 
   return (
-    <Card className="h-100 shadow-sm position-relative">
+    <Card className="h-100 shadow-sm position-relative d-flex flex-column">
       <Button
         variant="warning"
         size="sm"
@@ -36,7 +22,7 @@ const BookCard = ({ title, author, status, imageUrl = 'https://dhmckee.com/wp-co
       >
         <PencilSquare size={16} />
       </Button>
-      <div className="d-flex p-3">
+      <div className="d-flex p-3 flex-grow-1">
         <div className="flex-shrink-0 me-3">
           <Card.Img 
             style={{ width: '100px', height: '150px', objectFit: 'cover' }} 
@@ -57,7 +43,7 @@ const BookCard = ({ title, author, status, imageUrl = 'https://dhmckee.com/wp-co
           </Card.Body>
         </div>
       </div>
-      <Card.Footer className="d-flex justify-content-between">
+      <Card.Footer className="d-flex justify-content-between mt-auto">
         <Button 
           variant="primary" 
           onClick={onUpdateStatus}

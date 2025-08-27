@@ -1,27 +1,78 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, ProgressBar } from 'react-bootstrap';
+import { Container, Row, Col, Card, ProgressBar, Spinner, Alert, Button } from 'react-bootstrap';
+import axios from 'axios';
 
-// Mock data to simulate API response for dashboard stats
-const mockDashboardData = {
-  bookStats: {
-    totalBooks: 50,
-    booksRead: 30,
-    booksYetToRead: 15,
-    booksOngoing: 5,
-    totalCost: 750.50,
-    mostReadAuthor: 'J.K. Rowling',
-    mostReadCategory: 'Fantasy'
-  },
-  readingListStats: {
-    totalReadingLists: 8,
-    completedReadingLists: 2,
-    yetToCompleteLists: 6,
-    ongoingReadingLists: 3
-  }
-};
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const Dashboard = () => {
-  const [data, setData] = useState(mockDashboardData);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const userToken = localStorage.getItem('token');
+      
+      const response = await axios.get(`${BASE_URL}/dashboard`, {
+        headers: {
+          'Authorization': userToken
+        }
+      });
+
+      if (response.data.success) {
+        setData(response.data.data);
+      } else {
+        setError(response.data.message || 'Failed to fetch dashboard data.');
+      }
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      setError('Failed to fetch dashboard data. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <Container className="my-5 text-center">
+        <Spinner animation="border" role="status">
+          <span className="visually-hidden">Loading dashboard...</span>
+        </Spinner>
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container className="my-5">
+        <Alert variant="danger">{error}</Alert>
+        <div className="text-center">
+          <Button variant="primary" onClick={fetchDashboardData}>
+            Refresh
+          </Button>
+        </div>
+      </Container>
+    );
+  }
+
+  if (!data) {
+    return (
+      <Container className="my-5">
+        <Alert variant="info">No dashboard data available.</Alert>
+        <div className="text-center">
+          <Button variant="primary" onClick={fetchDashboardData}>
+            Refresh
+          </Button>
+        </div>
+      </Container>
+    );
+  }
 
   // Calculate book completion percentage
   const bookCompletionPercentage = data.bookStats.totalBooks > 0
@@ -35,7 +86,12 @@ const Dashboard = () => {
 
   return (
     <Container className="my-5">
-      <h2 className="mb-4 text-center">Your Dashboard</h2>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2 className="mb-0 text-center flex-grow-1">Your Dashboard</h2>
+        <Button variant="primary" onClick={fetchDashboardData}>
+          Refresh
+        </Button>
+      </div>
       
       {/* Book Stats Section */}
       <Card className="mb-4 shadow-sm">
@@ -90,7 +146,7 @@ const Dashboard = () => {
               <Card className="h-100 p-3">
                 <div className="d-flex justify-content-between">
                   <h6 className="mb-0">Total Book Cost</h6>
-                  <span className="fw-bold text-success">${data.bookStats.totalCost.toFixed(2)}</span>
+                  <span className="fw-bold text-success">₹{data.bookStats.totalCost.toFixed(2)}</span>
                 </div>
               </Card>
             </Col>

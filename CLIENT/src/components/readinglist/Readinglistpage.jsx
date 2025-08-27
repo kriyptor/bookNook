@@ -141,6 +141,7 @@ const Readinglistpage = () => {
                   status={status}
                   color={color}
                   totalBooks={list.books.length}
+                  completion={list.progress}
                   onView={() => handleViewList(list._id)}
                   onDelete={() => handleShowDeleteModal(list._id)}
                   isDeleting={deletingListId === list._id}

@@ -55,9 +55,155 @@ exports.getAllReadingLists = async (req, res) => {
 };
 
 
+exports.getAllInProgressReadingLists = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(400).json({ success: false, error: "Invalid user or product ID format" });
+    }
+
+    const page = parseInt(req.query.page) || 1;
+    const limitPointer = parseInt(req.query.limit) || 15;
+    const skipPointer = (page - 1) * limitPointer;
+    
+    const readingLists = await ReadingList.find({ userId, progress: { $gt: 0, $lt: 100 } })
+      .sort({ createdAt: -1 })
+      .skip(skipPointer)
+      .limit(limitPointer);
+
+    if (!readingLists || readingLists.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No reading lists in progress found'
+      });
+    }
+
+    // Count total reading lists for pagination
+    const totalReadingLists = await ReadingList.countDocuments({ userId, progress: { $gt: 0, $lt: 100 } });
+
+    const totalPages = Math.ceil(totalReadingLists / limitPointer);
+
+    res.status(200).json({
+      success: true,
+      data: readingLists,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalItems: totalReadingLists,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching reading lists',
+      error: error.message
+    });
+  }
+};
+
+exports.getNotStartedReadingLists = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(400).json({ success: false, error: "Invalid user or product ID format" });
+    }
+
+    const page = parseInt(req.query.page) || 1;
+    const limitPointer = parseInt(req.query.limit) || 15;
+    const skipPointer = (page - 1) * limitPointer;
+    
+    const readingLists = await ReadingList.find({ userId, progress: 0 })
+      .sort({ createdAt: -1 })
+      .skip(skipPointer)
+      .limit(limitPointer);
+
+    if (!readingLists || readingLists.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No not started reading lists found'
+      });
+    }
+
+    const totalReadingLists = await ReadingList.countDocuments({ userId, progress: 0 });
+
+    const totalPages = Math.ceil(totalReadingLists / limitPointer);
+
+    res.status(200).json({
+      success: true,
+      data: readingLists,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalItems: totalReadingLists,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching not started reading lists',
+      error: error.message
+    });
+  }
+};
+
+exports.getCompletedReadingLists = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(400).json({ success: false, error: "Invalid user or product ID format" });
+    }
+
+    const page = parseInt(req.query.page) || 1;
+    const limitPointer = parseInt(req.query.limit) || 15;
+    const skipPointer = (page - 1) * limitPointer;
+    
+    const readingLists = await ReadingList.find({ userId, progress: 100 })
+      .sort({ createdAt: -1 })
+      .skip(skipPointer)
+      .limit(limitPointer);
+
+    if (!readingLists || readingLists.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No completed reading lists found'
+      });
+    }
+
+    const totalReadingLists = await ReadingList.countDocuments({ userId, progress: 100 });
+
+    const totalPages = Math.ceil(totalReadingLists / limitPointer);
+
+    res.status(200).json({
+      success: true,
+      data: readingLists,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalItems: totalReadingLists,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching completed reading lists',
+      error: error.message
+    });
+  }
+};
 
 // GET /api/reading-lists/:id - Get a specific reading list
-// CORRECTED: exports.getSingleReadingList
 exports.getSingleReadingList = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -68,30 +214,60 @@ exports.getSingleReadingList = async (req, res) => {
     }
 
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 15;
+    const limit = parseInt(req.query.limit) || 3;
     const skip = (page - 1) * limit;
 
-    // Step 1: Find the list and check ownership to get the total book count FIRST.
-    // We only select the 'books' field for efficiency.
-    const listForCount = await ReadingList.findOne({ _id: id, userId }).select('books');
+    // Find the reading list with ownership check
+    const readingList = await ReadingList.findOne({ _id: id, userId });
 
-    if (!listForCount) {
+    if (!readingList) {
       return res.status(404).json({ success: false, message: 'Reading list not found or does not belong to the user.' });
     }
 
-    const totalBooks = listForCount.books.length;
+    const totalBooks = readingList.books.length;
     const totalPages = Math.ceil(totalBooks / limit);
 
-    // Step 2: Now, find the same list again but populate it with pagination for the response.
-    const readingList = await ReadingList.findById(id) // We already verified ownership, so a simple findById is fine.
-      .populate({
-        path: 'books',
-        options: { skip, limit }
-      });
+    // Calculate read books count from the full list
+    const readBooksCount = readingList.books.filter(bookItem => 
+      bookItem.isRead || (bookItem.book && bookItem.book.status === 'Read')
+    ).length;
+
+    // Manually slice the books array for pagination
+    const paginatedBookIds = readingList.books.slice(skip, skip + limit);
+
+    // Populate only the paginated books
+    const populatedBooks = await ReadingList.populate(readingList, {
+      path: 'books.book',
+      match: { _id: { $in: paginatedBookIds.map(book => book.book) } }
+    });
+
+    // Create response with only paginated books
+    const responseData = {
+      _id: readingList._id,
+      userId: readingList.userId,
+      title: readingList.title,
+      description: readingList.description,
+      books: paginatedBookIds.map(bookItem => {
+        const populatedBook = populatedBooks.books.find(b => 
+          b.book && b.book._id.toString() === bookItem.book.toString()
+        );
+        return populatedBook || bookItem;
+      }),
+      progress: readingList.progress,
+      readingProgress: {
+        totalBooks: totalBooks,
+        readBooks: readBooksCount,
+        unreadBooks: totalBooks - readBooksCount,
+        percentage: totalBooks > 0 ? Math.round((readBooksCount / totalBooks) * 100) : 0
+      },
+      createdAt: readingList.createdAt,
+      updatedAt: readingList.updatedAt,
+      __v: readingList.__v
+    };
 
     res.status(200).json({
       success: true,
-      data: readingList,
+      data: responseData,
       pagination: {
         currentPage: page,
         totalPages: totalPages,
@@ -126,7 +302,7 @@ exports.createReadingList = async (req, res) => {
       return res.status(400).json({ success: false, error: "Invalid user ID format" });
     }
     
-    const { title, description, books } = req.body;
+    const { title, description, books = [] } = req.body;
 
     if (!title || !description) {
       await session.abortTransaction();
@@ -146,31 +322,31 @@ exports.createReadingList = async (req, res) => {
     }
 
     // 3. Create books within the transaction if the array is not empty
-    let createdBooks = [];
+    let createdBookIds = [];
     if (books.length > 0) {
-      // Create new book documents with the user ID
       const newBooks = books.map(book => ({
         ...book,
-        userId: userId // CRITICAL: Use 'userId' to match the schema
+        userId: userId
       }));
-      createdBooks = await Books.insertMany(newBooks, { session });
+      const createdBooks = await Books.insertMany(newBooks, { session });
+      createdBookIds = createdBooks.map(book => book._id);
     }
     
-    // Get the IDs of the newly created books
-    const createdBookIds = createdBooks.map(book => book._id);
-    
-    // 4. Create the new reading list with the book IDs
+    // 4. Create the new reading list with the updated book structure
     const newReadingList = new ReadingList({
       userId,
       title,
       description,
-      books: createdBookIds
+      books: createdBookIds.map(bookId => ({ book: bookId, isRead: false }))
     });
 
     const savedReadingList = await newReadingList.save({ session });
+    
+    // Call the instance method to calculate and save the initial progress
+    await savedReadingList.calculateAndSaveProgress({ session });
 
     // 5. Populate the saved document before committing the transaction
-    const populatedReadingList = await savedReadingList.populate('books');
+    const populatedReadingList = await savedReadingList.populate('books.book');
     
     // 6. Commit the transaction and end the session
     await session.commitTransaction();
@@ -200,6 +376,7 @@ exports.createReadingList = async (req, res) => {
     });
   }
 };
+
 
 // PUT /api/reading-lists/:id - Update a reading list
 exports.updateReadingList = async (req, res) => {
@@ -272,8 +449,8 @@ exports.addBookToReadingList = async (req, res) => {
 
   try {
     const userId = req.user._id;
-    const { id: readingListId } = req.params;
-    const bookData = req.body;
+    const { id : readingListId } = req.params;
+    const booksData = req.body.books; // Expecting an array of book objects
 
     // 1. Validate IDs
     if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(readingListId)) {
@@ -290,35 +467,60 @@ exports.addBookToReadingList = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Reading list not found or does not belong to the user.' });
     }
 
-    // 3. Create the new book and validate required fields
-    if (!bookData.title || !bookData.author || !bookData.category) {
-       await session.abortTransaction();
-       session.endSession();
-       return res.status(400).json({ success: false, error: "Title, author, and category are required for a new book." });
+    // 3. Validate booksData is an array and not empty
+    if (!Array.isArray(booksData) || booksData.length === 0) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ success: false, error: "Please provide an array of book objects to add." });
     }
-    
-    // Add userId to the book data
-    const newBook = await Books.create([{ ...bookData, userId: userId }], { session });
 
-    // 4. Add the new book's ID to the reading list
-    readingList.books.push(newBook[0]._id);
+    // 4. Validate each book object
+    for (const book of booksData) {
+      if (!book.title || !book.author || !book.category) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).json({ 
+          success: false, 
+          error: "Each book must have title, author, and category." 
+        });
+      }
+    }
+
+    // 5. Add userId to each book and create them
+    const newBooks = booksData.map(book => ({
+      ...book,
+      userId: userId
+    }));
+
+    const createdBooks = await Books.insertMany(newBooks, { session });
+
+    // 6. Add the new book IDs to the reading list
+    const createdBookIds = createdBooks.map(book => book._id);
+    createdBookIds.forEach(id => {
+      readingList.books.push({ book: id });
+    });
     await readingList.save({ session });
 
-    // 5. Populate the reading list to include the new book's data in the response
-    const populatedReadingList = await readingList.populate('books');
-    
-    // 6. Commit the transaction
+    // 7. Update progress
+    await readingList.calculateAndSaveProgress({ session });
+
+    // 8. Populate the reading list to include the new books' data in the response
+    const populatedReadingList = await ReadingList.findById(readingListId)
+      .populate({ path: 'books.book' })
+      .session(session);
+
+    // 9. Commit the transaction
     await session.commitTransaction();
     session.endSession();
 
     res.status(200).json({
       success: true,
-      message: 'Book created and added to reading list successfully.',
+      message: 'Books created and added to reading list successfully.',
       data: populatedReadingList
     });
 
   } catch (error) {
-    // 7. Abort transaction on any error
+    // 10. Abort transaction on any error
     await session.abortTransaction();
     session.endSession();
 
@@ -328,7 +530,7 @@ exports.addBookToReadingList = async (req, res) => {
     
     res.status(500).json({
       success: false,
-      message: 'Error creating and adding book to reading list.',
+      message: 'Error creating and adding books to reading list.',
       error: error.message
     });
   }
@@ -337,8 +539,8 @@ exports.addBookToReadingList = async (req, res) => {
 exports.removeBookFromReadingList = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { id: readingListId } = req.params;
-    const { bookId } = req.body;
+    const { id: readingListId, bookId } = req.params;
+
 
     // Validate IDs
     if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(readingListId) || !mongoose.isValidObjectId(bookId)) {
@@ -348,13 +550,16 @@ exports.removeBookFromReadingList = async (req, res) => {
     // Find and update the reading list with ownership check
     const updatedReadingList = await ReadingList.findOneAndUpdate(
       { _id: readingListId, userId: userId },
-      { $pull: { books: bookId } }, // $pull removes the specified item from the array
+      { $pull: { books: { book: bookId } } }, // Updated to match schema structure
       { new: true, runValidators: true }
-    ).populate('books');
+    ).populate('books.book');
 
     if (!updatedReadingList) {
       return res.status(404).json({ success: false, message: 'Reading list not found or does not belong to the user.' });
     }
+
+    // Update progress using the schema method
+    await updatedReadingList.calculateAndSaveProgress();
 
     res.status(200).json({
       success: true,

@@ -6,6 +6,7 @@ const bodyParser = require("body-parser");
 const authRouter = require("./Routes/auth-routes");
 const bookRouter = require("./Routes/book-routes");
 const readingListRouter = require("./Routes/readingList-routes");
+const dashboardRouter = require("./Routes/dashboard-routes");
 
 const PORT = process.env.PORT || 3000;
 
@@ -23,6 +24,7 @@ app.use(bodyParser.json());
 app.use("/api/auth", authRouter);
 app.use("/api/books", bookRouter);
 app.use("/api/reading-lists", readingListRouter);
+app.use("/api/dashboard", dashboardRouter);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
