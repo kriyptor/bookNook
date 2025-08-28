@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Spinner, Alert, Button, Pagination } from 'react-bootstrap';
 import axios from 'axios';
@@ -6,6 +6,7 @@ import BookCard from '../BookCard';
 import EditBookModal from '../EditBookModal';
 import DeleteBookModal from './DeleteBookModal';
 import AddBookToListModal from './AddBookToListModal';
+import EditBookDetailsModal from '../EditBookDetailsModal';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -30,7 +31,8 @@ const SingleReadingListPage = () => {
   const [updateError, setUpdateError] = useState(null);
   
   // Modal states
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [showEditStatusModal, setShowEditStatusModal] = useState(false);
+  const [showEditDetailsModal, setShowEditDetailsModal] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [bookToDelete, setBookToDelete] = useState(null);
@@ -51,7 +53,7 @@ const SingleReadingListPage = () => {
       setError(null);
       const userToken = localStorage.getItem('token');
       
-      const response = await axios.get(`${BASE_URL}/reading-lists/list/${listId}?page=${page}&limit=3`, {
+      const response = await axios.get(`${BASE_URL}/reading-lists/list/${listId}?page=${page}&limit=9`, {
         headers: { 'Authorization': userToken }
       });
 
@@ -108,14 +110,14 @@ const SingleReadingListPage = () => {
     });
   };
 
-  const handleEditClick = (book) => {
+  const handleEditDetails = (book) => {
     setSelectedBook(book);
-    setShowEditModal(true);
+    setShowEditDetailsModal(true);
   };
 
   const handleStatusUpdate = (book) => {
     setSelectedBook(book);
-    setShowEditModal(true);
+    setShowEditStatusModal(true);
   };
   
   const handleDeleteClick = (book) => {
@@ -152,10 +154,38 @@ const SingleReadingListPage = () => {
             : bookItem
         )
       );
-      setShowEditModal(false);
+      setShowEditStatusModal(false);
     } catch (err) {
       console.error('Error updating book:', err);
       setUpdateError(err.response?.data?.message || 'Failed to update book. Please try again.');
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
+  const handleUpdateBookDetails = async (bookId, updatedData) => {
+    setUpdateLoading(true);
+    setUpdateError(null);
+    try {
+      const userToken = localStorage.getItem('token');
+      if (!userToken) throw new Error('No authentication token found. Please sign in.');
+
+      const response = await axios.put(`${BASE_URL}/books/${bookId}`, updatedData, {
+        headers: { 'Authorization': userToken }
+      });
+      const updatedBookData = response.data.data;
+
+      setBooks(prevBooks => 
+        prevBooks.map(bookItem => 
+          bookItem.book._id === bookId 
+            ? { ...bookItem, book: updatedBookData }
+            : bookItem
+        )
+      );
+      setShowEditDetailsModal(false);
+    } catch (err) {
+      console.error('Error updating book data:', err);
+      setUpdateError(err.response?.data?.message || 'Failed to update book data.');
     } finally {
       setUpdateLoading(false);
     }
@@ -224,7 +254,8 @@ const SingleReadingListPage = () => {
       const userToken = localStorage.getItem('token');
       
       await axios.put(`${BASE_URL}/reading-lists/${listId}/books`, {
-       books: booksToAdd
+        listId,
+        books: booksToAdd
       }, {
         headers: { 'Authorization': userToken }
       });
@@ -358,7 +389,7 @@ const SingleReadingListPage = () => {
                   author={bookItem.book.author}
                   status={bookItem.book.status}
                   imageUrl={bookItem.book.imageUrl}
-                  onEditDetails={() => handleEditClick(bookItem.book)}
+                  onEditDetails={() => handleEditDetails(bookItem.book)}
                   onUpdateStatus={() => handleStatusUpdate(bookItem.book)}
                   onDelete={() => handleDeleteClick(bookItem.book)}
                 />
@@ -404,13 +435,25 @@ const SingleReadingListPage = () => {
       )}
       
       <EditBookModal
-        show={showEditModal}
+        show={showEditStatusModal}
         onHide={() => {
-          setShowEditModal(false);
+          setShowEditStatusModal(false);
           setUpdateError(null);
         }}
         book={selectedBook}
         onUpdate={handleUpdateBookStatus}
+        updateLoading={updateLoading}
+        updateError={updateError}
+      />
+      
+      <EditBookDetailsModal
+        show={showEditDetailsModal}
+        onHide={() => {
+          setShowEditDetailsModal(false);
+          setUpdateError(null);
+        }}
+        book={selectedBook}
+        onUpdate={handleUpdateBookDetails}
         updateLoading={updateLoading}
         updateError={updateError}
       />

@@ -214,7 +214,7 @@ exports.getSingleReadingList = async (req, res) => {
     }
 
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 3;
+    const limit = parseInt(req.query.limit) || 9;
     const skip = (page - 1) * limit;
 
     // Find the reading list with ownership check
@@ -620,7 +620,6 @@ exports.deleteReadingList = async (req, res) => {
 };
 
 exports.deleteReadingWithBooksList = async (req, res) => {
-  // 1. Start a new transaction session
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -628,14 +627,12 @@ exports.deleteReadingWithBooksList = async (req, res) => {
     const userId = req.user._id;
     const { id } = req.params;
 
-    // 2. Validate IDs
     if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(id)) {
       await session.abortTransaction();
       session.endSession();
       return res.status(400).json({ success: false, error: "Invalid user or list ID format" });
     }
 
-    // 3. Find the reading list with an ownership check
     const readingList = await ReadingList.findOne({ _id: id, userId }).session(session);
 
     if (!readingList) {
@@ -644,16 +641,13 @@ exports.deleteReadingWithBooksList = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Reading list not found or does not belong to the user.' });
     }
 
-    // 4. Delete all books in the list
     if (readingList.books.length > 0) {
-      // Use the deleteMany() method to remove all books by their IDs
-      await Books.deleteMany({ _id: { $in: readingList.books } }).session(session);
+      const bookIds = readingList.books.map(b => b.book);
+      await Books.deleteMany({ _id: { $in: bookIds } }, { session });
     }
 
-    // 5. Delete the reading list itself
-    await ReadingList.deleteOne({ _id: id }).session(session);
+    await ReadingList.deleteOne({ _id: id }, { session });
 
-    // 6. Commit the transaction if all operations were successful
     await session.commitTransaction();
     session.endSession();
 
@@ -663,7 +657,6 @@ exports.deleteReadingWithBooksList = async (req, res) => {
     });
 
   } catch (error) {
-    // 7. Abort the transaction in case of any error
     await session.abortTransaction();
     session.endSession();
 

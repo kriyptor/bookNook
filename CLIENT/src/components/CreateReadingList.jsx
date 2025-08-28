@@ -284,20 +284,32 @@ const CreateReadingList = ({ show, onHide }) => {
                 />
               </Form.Group>
               <Form.Group className="mb-3">
-                <Form.Label>Category</Form.Label>
-                <Form.Select
-                  name="category"
-                  value={currentBook.category}
-                  onChange={handleBookChange}
-                  className="rounded"
-                >
-                  <option value="">Select a Category</option>
-                  <option value="Fiction">Fiction</option>
-                  <option value="Non-Fiction">Non-Fiction</option>
-                  <option value="Science & Technology">Science & Technology</option>
-                  <option value="Other">Other</option>
-                </Form.Select>
-              </Form.Group>
+  <Form.Label>Category</Form.Label>
+  <Form.Select
+    name="category"
+    value={currentBook.category}
+    onChange={handleBookChange}
+    className="rounded"
+  >
+    <option value="">Select a Category</option>
+    <option value="Fiction">Fiction</option>
+    <option value="Non-Fiction">Non-Fiction</option>
+    <option value="Spirituality">Spirituality</option>
+    <option value="Philosophy">Philosophy</option>
+    <option value="Biography & Memoir">Biography & Memoir</option>
+    <option value="Literature & Poetry">Literature & Poetry</option>
+    <option value="Sci-Fi & Fantasy">Sci-Fi & Fantasy</option>
+    <option value="Mystery & Thriller">Mystery & Thriller</option>
+    <option value="Self-Help & Personal Development">Self-Help & Personal Development</option>
+    <option value="Business & Finance">Business & Finance</option>
+    <option value="History">History</option>
+    <option value="Arts & Photography">Arts & Photography</option>
+    <option value="Health & Wellness">Health & Wellness</option>
+    <option value="Science & Technology">Science & Technology</option>
+    <option value="Graphic Novels & Comics">Graphic Novels & Comics</option>
+    <option value="Other">Other</option>
+  </Form.Select>
+</Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>Image URL (Optional)</Form.Label>
                 <Form.Control

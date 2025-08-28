@@ -197,13 +197,13 @@ const AuthComponent = ({ handleLogin }) => {
                       <Button variant="primary" type="submit" className="rounded-pill px-4">
                         Sign In
                       </Button>
-                      <Button 
+                      {/* <Button 
                         variant="link" 
                         onClick={() => setKey('forgotpassword')}
                         className="text-decoration-none"
                       >
                         Forgot Password?
-                      </Button>
+                      </Button> */}
                     </div>
                   </Form>
                 </Tab>
@@ -283,7 +283,7 @@ const AuthComponent = ({ handleLogin }) => {
                 </Tab>
 
                 {/* Forgot Password Tab */}
-                <Tab eventKey="forgotpassword" title="Forgot Password">
+                {/* <Tab eventKey="forgotpassword" title="Forgot Password">
                   <Form onSubmit={handleForgotPassword}>
                     <Form.Group className="mb-3">
                       <Form.Label>Email Address</Form.Label>
@@ -303,7 +303,7 @@ const AuthComponent = ({ handleLogin }) => {
                       Send Reset Link
                     </Button>
                   </Form>
-                </Tab>
+                </Tab> */}
               </Tabs>
             </Card.Body>
           </Card>

@@ -13,6 +13,7 @@ import Bookpage from "./components/Bookpage";
 import ReadBookpage from "./components/ReadBookpage";
 import ReadingBookpage from "./components/ReadingBookpage"
 import SingleReadingListPage from "./components/readinglist/SingleReadingListPage";
+import NotFound from "./components/NotFound";
 import axios from 'axios'; 
 
 const App = () => {
@@ -182,7 +183,7 @@ const App = () => {
         {/* 404 Route */}
         <Route 
           path="*" 
-          element={<Navigate to="/" />} 
+          element={<NotFound />} 
         />
       </Routes>
     </Router>

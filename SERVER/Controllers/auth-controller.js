@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const { User } = require("../Models/user-schema");
 const bcrypt = require(`bcrypt`);
 const jwt = require(`jsonwebtoken`);
@@ -96,3 +97,66 @@ exports.loginUser = async (req, res) => {
         });
     }
 }
+
+// getUserProfile.js
+exports.getUserProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(400).json({ success: false, error: "Invalid user ID format" });
+    }
+
+    const user = await User.findById(userId, 'email name profilePic').lean();
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.status(200).json({ success: true, data: user });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching user profile',
+      error: error.message
+    });
+  }
+};
+
+// updateUserProfile.js
+exports.updateUserProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { name, profilePic } = req.body;
+
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(400).json({ success: false, error: "Invalid user ID format" });
+    }
+
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (profilePic) updateData.profilePic = profilePic;
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ success: false, message: 'No updates provided' });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updateData },
+      { new: true, runValidators: true, fields: 'name profilePic' }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.status(200).json({ success: true, data: updatedUser });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating user profile',
+      error: error.message
+    });
+  }
+};

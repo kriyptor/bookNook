@@ -67,10 +67,6 @@ const BookNookNavbar = ({ isAuthenticated, onLogout }) => {
                 <NavDropdown.Item onClick={() => handleNavigation('/AllReadingBooks')}>
                   All Reading Books
                 </NavDropdown.Item>
-                <NavDropdown.Divider />
-                <NavDropdown.Item onClick={() => handleNavigation('/FavoriteBooks')}>
-                  Favourite Books
-                </NavDropdown.Item>
               </NavDropdown>
             </Nav>
             <Nav className="ms-auto align-items-center">

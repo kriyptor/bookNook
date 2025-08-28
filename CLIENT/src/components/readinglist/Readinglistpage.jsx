@@ -5,12 +5,12 @@ import axios from 'axios';
 import ReadingListCard from './ReadingListCard';
 import DeleteReadingListModal from './DeleteReadingListModal';
 
-const getReadingListStatus = (total, completed) => {
-  if (completed === total && total > 0) {
+const getReadingListStatus = (progress) => {
+  if (progress === 100) {
     return { status: 'Completed', color: 'success' };
-  } else if (completed > 0) {
+  } else if (progress > 0 && progress < 99) {
     return { status: 'In Progress', color: 'primary' };
-  } else {
+  } else if( progress === 0 ) {
     return { status: 'Yet to be Started', color: 'secondary' };
   }
 };
@@ -133,7 +133,7 @@ const Readinglistpage = () => {
         
         <Row xs={1} sm={2} lg={3} className="g-4">
           {readingLists.map((list) => {
-            const { status, color } = getReadingListStatus(list.books.length, list.completedBooks || 0);
+            const { status, color } = getReadingListStatus(list.progress);
             return (
               <Col key={list._id}>
                 <ReadingListCard
