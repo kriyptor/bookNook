@@ -108,92 +108,114 @@ exports.getAllBooks = async (req, res) => {
 exports.createBook = async (req, res) => {
   try {
     const userId = req.user._id;
-
-    const {
-      title,
-      author,
-      purchaseUrl,
-      price,
-      description,
-      category,
-      imageUrl,
-      status,
-      isFavorite,
-      learnings, // Destructure the learnings object
-    } = req.body;
-
-    // Validate required fields
-    if (!title || !author || !category) {
+    const { booksToCreate } = req.body;
+    console.log(booksToCreate)
+    // Validate input is an array
+    if (!Array.isArray(booksToCreate) || booksToCreate.length === 0) {
       return res.status(400).json({
         success: false,
-        error: "Title, author, and category are required"
+        error: "booksToCreate must be a non-empty array"
       });
     }
 
-     if (
-       !category ||
-       ![
-         "Fiction",
-         "Non-Fiction",
-         "Spirituality",
-         "Philosophy",
-         "Biography & Memoir",
-         "Literature & Poetry",
-         "Sci-Fi & Fantasy",
-         "Mystery & Thriller",
-         "Self-Help & Personal Development",
-         "Business & Finance",
-         "History",
-         "Arts & Photography",
-         "Health & Wellness",
-         "Science & Technology",
-         "Graphic Novels & Comics",
-         "Other",
-       ].includes(category)
-     ) {
-       return res.status(400).json({
-         success: false,
-         error: "Invalid category",
-       });
-     }
+    const validCategories = [
+      "Fiction", "Non-Fiction", "Spirituality", "Philosophy",
+      "Biography & Memoir", "Literature & Poetry", "Sci-Fi & Fantasy",
+      "Mystery & Thriller", "Self-Help & Personal Development",
+      "Business & Finance", "History", "Arts & Photography",
+      "Health & Wellness", "Science & Technology",
+      "Graphic Novels & Comics", "Other"
+    ];
 
-    // Build the book data object dynamically, including the userId
-    const bookData = {
-      userId, 
-      title,
-      author,
-      category
+    const createdBooks = [];
+    const errors = [];
+
+    for (let i = 0; i < booksToCreate.length; i++) {
+      const bookInput = booksToCreate[i];
+      
+      try {
+        const {
+          title, author, purchaseUrl, price, description,
+          category, imageUrl, status, isFavorite, learnings
+        } = bookInput;
+
+        // Validate required fields
+        if (!title || !author || !category) {
+          errors.push({
+            index: i,
+            error: "Title, author, and category are required",
+            book: { title, author }
+          });
+          continue;
+        }
+
+        // Validate category
+        if (!validCategories.includes(category)) {
+          errors.push({
+            index: i,
+            error: "Invalid category",
+            book: { title, author }
+          });
+          continue;
+        }
+
+        // Build book data
+        const bookData = { userId, title, author, category };
+        
+        if (purchaseUrl) bookData.purchaseUrl = purchaseUrl;
+        if (price) bookData.price = price;
+        if (description) bookData.description = description;
+        if (imageUrl) bookData.imageUrl = imageUrl;
+        if (status) bookData.status = status;
+        if (isFavorite !== undefined) bookData.isFavorite = isFavorite;
+        
+        if (learnings) {
+          bookData.learnings = {
+            summary: learnings.summary || '',
+            details: learnings.details || ''
+          };
+        }
+
+        const book = new Books(bookData);
+        const savedBook = await book.save();
+        createdBooks.push(savedBook);
+
+      } catch (bookError) {
+        errors.push({
+          index: i,
+          error: bookError.message,
+          book: { title: bookInput.title, author: bookInput.author }
+        });
+      }
+    }
+
+    // Return response based on results
+    if (createdBooks.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No books were created',
+        errors
+      });
+    }
+
+    const response = {
+      success: true,
+      message: `${createdBooks.length} book(s) created successfully`,
+      data: createdBooks
     };
 
-    if (purchaseUrl) bookData.purchaseUrl = purchaseUrl;
-    if (price) bookData.price = price;
-    if (description) bookData.description = description;
-    if (imageUrl) bookData.imageUrl = imageUrl;
-    if (status) bookData.status = status;
-    if (isFavorite !== undefined) bookData.isFavorite = isFavorite; // Handle boolean explicitly
-    
-    // Handle the learnings data according to your schema
-    if (learnings) {
-      bookData.learnings = {
-        summary: learnings.summary,
-        details: learnings.details,
-      };
+    if (errors.length > 0) {
+      response.partialSuccess = true;
+      response.errors = errors;
+      response.message = `${createdBooks.length} book(s) created, ${errors.length} failed`;
     }
-    
-    // Create and save the new book in a single step
-    const book = new Books(bookData);
-    const savedBook = await book.save();
 
-    res.status(201).json({
-      success: true,
-      message: 'Book created successfully',
-      data: savedBook // Use the savedBook object directly
-    });
+    res.status(201).json(response);
 
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error creating book',
+      message: 'Error creating books',
       error: error.message
     });
   }

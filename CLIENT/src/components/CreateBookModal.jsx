@@ -121,11 +121,11 @@ const CreateBookModal = ({ show, onHide }) => {
   };
 
   const handleCreateBooks = async() => {
-    console.log(booksToCreate);
-     
+    console.log(booksToCreate)
     try{
-
-      await axios.post(`${BASE_URL}/books`, booksToCreate,
+      const userToken = localStorage.getItem("token");
+      if(!userToken) throw new Error("No authentication token found. Please sign in.");
+      await axios.post(`${BASE_URL}/books`, {booksToCreate},
          { headers: {"Authorization" : userToken } }
       );
 
