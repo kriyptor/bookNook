@@ -3,6 +3,9 @@
 BookNook is a full-stack web application for managing your personal library and reading lists. It allows users to track books, create and manage reading lists, mark favorites, and monitor reading progress.
 
 ---
+### My Project
+
+Check out this demo video: [Watch the demo video on Google Drive](https://drive.google.com/file/d/155A63G7iJpYiFAlRt68Cd2WW1f5Of3VH/view?usp=sharing)
 
 ## Features
 
